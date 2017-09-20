@@ -5,6 +5,7 @@ This uses VTK 8, QT 5, and PyQT
 # Setup VTK with python
 
 https://blog.kitware.com/kitware-packages-on-os-x-with-homebrew/
+
 https://docs.brew.sh/Homebrew-and-Python.html
 
 ```shell
