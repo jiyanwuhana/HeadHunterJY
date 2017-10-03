@@ -3,28 +3,11 @@ from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout
 from PyQt5.QtQuick import QQuickView
 import vtk
-from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
+from Viewer import Viewer, Pane
 
 #####################################################################################################################
 ## CLASSES
 ##################################################################################################################### 
-
-class QVTKRenderWindow(QVTKRenderWindowInteractor):
-	def __init__(self, parent=None):
-		super().__init__(parent)
-		self.renderer = vtk.vtkRenderer()
-		self.renderWindow =  self.GetRenderWindow()
-		self.renderWindow.AddRenderer(self.renderer)
-		self.interactor = self.renderWindow.GetInteractor()
-		self.interactorStyle = self.interactor.GetInteractorStyle()
-		self.actors = {}
-
-	def addActorToScene(self, actor, id):
-		self.actors[id] = actor
-		self.renderer.AddActor(actor)
-
-	def startEventLoop(self):
-		self.interactor.Initialize()
 
 class MainWindow(QMainWindow):
 	def __init__(self, parent=None):
@@ -63,25 +46,29 @@ def QMLToWidgets(sources):
 app = QApplication([])
 mainWindow = MainWindow()
 
-# vtk component
-vtkWidget = QVTKRenderWindow()
-vtkWidget.setMinimumWidth(800)
-vtkWidget.setMinimumHeight(600)
-vtkWidget.interactorStyle.SetCurrentStyleToTrackballCamera()
+viewer = Viewer()
+viewer.setMinimumWidth(800)
+viewer.setMinimumHeight(600)
 
 # Create source
 source = vtk.vtkSphereSource()
 source.SetCenter(0, 0, 0)
 source.SetRadius(5.0)
-
 # Create a mapper
 mapper = vtk.vtkPolyDataMapper()
 mapper.SetInputConnection(source.GetOutputPort())
-
 # Create an actor
 actor = vtk.vtkActor()
 actor.SetMapper(mapper)
-vtkWidget.addActorToScene(actor, 'sphere')
+# Create renderer
+ren = vtk.vtkRenderer()
+ren.AddActor(actor)
+
+# add panes
+viewer.addPane('TL', ren, (0,.5,.5,1))
+viewer.addPane('TR', ren, (.5,.5,1,1))
+viewer.addPane('BL', ren, (0,0,.5,.5))
+viewer.addPane('BR', ren, (.5,0,1,.5))
 
 # load qml components
 [topWidget, bottomWidget, leftWidget, rightWidget] = QMLToWidgets([
@@ -97,7 +84,7 @@ mainWindow.topPanel.addWidget(topWidget)
 mainWindow.bottomPanel.addWidget(bottomWidget)
 mainWindow.leftPanel.addWidget(leftWidget)
 mainWindow.rightPanel.addWidget(rightWidget)
-mainWindow.centerPanel.addWidget(vtkWidget)
+mainWindow.centerPanel.addWidget(viewer)
 
-vtkWidget.startEventLoop()
+viewer.startEventLoop()
 sys.exit(app.exec_())
