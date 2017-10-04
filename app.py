@@ -3,7 +3,8 @@ from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout
 from PyQt5.QtQuick import QQuickView
 import vtk
-from Viewer import Viewer, Pane
+import itk
+from Viewer import Viewer, Pane, SlicePane
 
 #####################################################################################################################
 ## CLASSES
@@ -43,6 +44,13 @@ def QMLToWidgets(sources):
 ## BEGIN
 ##################################################################################################################### 
 
+# generate dicom series file names
+DICOM_PATH = "/Users/benjaminhon/Developer/data/bpynz/M489106/001321140"
+generator = itk.GDCMSeriesFileNames.New()
+generator.SetDirectory(DICOM_PATH)
+seriesUIDs = generator.GetSeriesUIDs()
+series = { uid: generator.GetFileNames(uid) for uid in generator.GetSeriesUIDs() }
+
 app = QApplication([])
 mainWindow = MainWindow()
 
@@ -50,27 +58,17 @@ viewer = Viewer()
 viewer.setMinimumWidth(800)
 viewer.setMinimumHeight(600)
 
-# Create source
-source = vtk.vtkSphereSource()
-source.SetCenter(0, 0, 0)
-source.SetRadius(5.0)
-# Create a mapper
-mapper = vtk.vtkPolyDataMapper()
-mapper.SetInputConnection(source.GetOutputPort())
-# Create an actor
-actor = vtk.vtkActor()
-actor.SetMapper(mapper)
-# Create renderer
-ren = vtk.vtkRenderer()
-ren.AddActor(actor)
+# Slice Pane
+slicePane = SlicePane('TL', viewer)
+slicePane.loadDicom(series[seriesUIDs[3]])
+slicePane2 = SlicePane('TR', viewer)
+slicePane2.loadDicom(series[seriesUIDs[3]])
 
-# add panes
-viewer.addPane('TL', ren, (0,.5,.5,1))
-viewer.addPane('TR', ren, (.5,.5,1,1))
-viewer.addPane('BL', ren, (0,0,.5,.5))
-viewer.addPane('BR', ren, (.5,0,1,.5))
+# Add panes
+viewer.addPane(slicePane, (0,.5,.5,1))
+viewer.addPane(slicePane2, (.5,.5,1,1))
 
-# load qml components
+# Load qml components
 [topWidget, bottomWidget, leftWidget, rightWidget] = QMLToWidgets([
 	('panel.qml', (250,50)),
 	('panel.qml', (250,50)),

@@ -1,2 +1,2 @@
 from .viewer import Viewer
-from .pane import Pane
+from .pane import Pane, SlicePane
