@@ -13,9 +13,6 @@ class Pane():
     self.renderer = renderer
     self.viewer = viewer
     self.scene = {}
-    
-  def onInteractorEvent(self, event, eventData):
-    print(self.uid, event, eventData)
 
 #################################################################################################
 ## SlicePane
@@ -27,10 +24,18 @@ class SlicePane(Pane):
   inputImageType  = itk.Image[itk.F, 3]
   
   def __init__(self, uid, viewer):
+    self.uid = uid
     self.reader = itk.ImageSeriesReader[self.inputImageType].New()
     self.imageViewer = vtk.vtkImageViewer2()
     self.imageViewer.SetRenderWindow(viewer.renderWindow) # don't use the vtkImageViewer2 render window
     super().__init__(uid, self.imageViewer.GetRenderer(), viewer)
+    # subscribe to viewer events
+    viewer.events.mouseWheelForward \
+      .filter(lambda ev: ev[0] == self.uid) \
+      .subscribe(lambda ev: self.nextSlice())
+    viewer.events.mouseWheelBackward \
+      .filter(lambda ev: ev[0] == self.uid) \
+      .subscribe(lambda ev: self.previousSlice())
 
   def setupCamera(self):
     # itk origin is topleft, vtk origin is bottom left
@@ -59,12 +64,6 @@ class SlicePane(Pane):
     self.maxSlice = self.imageViewer.GetSliceMax()
     self.slice = round((self.minSlice + self.maxSlice) / 2)
     self.imageViewer.SetSlice(self.slice)
-
-  def onInteractorEvent(self, event, eventData):
-    if event == 'MouseWheelBackwardEvent':
-      self.previousSlice()
-    elif event == 'MouseWheelForwardEvent':
-      self.nextSlice()
 
   def nextSlice(self):
     if self.slice != None and self.slice < self.maxSlice:
