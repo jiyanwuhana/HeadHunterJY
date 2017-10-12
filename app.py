@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtCore import Qt, QUrl
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QMenuBar, QMenu
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QMenuBar, QMenu, QFileDialog
 from PyQt5.QtQuick import QQuickView
 import vtk
 import itk
@@ -40,19 +40,16 @@ def QMLToWidgets(sources):
 		widgets.append(widget)
 	return widgets
 
+def generateSeries(path):
+	generator = itk.GDCMSeriesFileNames.New()
+	generator.SetDirectory(path)
+	seriesUIDs = generator.GetSeriesUIDs()
+	series = { uid: generator.GetFileNames(uid) for uid in generator.GetSeriesUIDs() }
+	return (series, seriesUIDs)
+
 #####################################################################################################################
 ## BEGIN
 ##################################################################################################################### 
-
-# generate dicom series file names
-DICOM_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259"
-generator = itk.GDCMSeriesFileNames.New()
-generator.SetDirectory(DICOM_PATH)
-seriesUIDs = generator.GetSeriesUIDs()
-series = { uid: generator.GetFileNames(uid) for uid in generator.GetSeriesUIDs() }
-
-# nii path
-NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
 
 app = QApplication([])
 mainWindow = MainWindow()
@@ -62,14 +59,9 @@ viewer.setMinimumWidth(800)
 viewer.setMinimumHeight(600)
 
 # slice panes
-slicePane = SlicePane('TL', viewer, sync=True) \
-	.loadDicomNii(series[seriesUIDs[2]])
-
-slicePane2 = SlicePane('TR', viewer, imageMax=0, maskOpacity=1, sync=True) \
-	.loadDicomNii(series[seriesUIDs[2]], NII_PATH)
-
-slicePane3 = SlicePane('BL', viewer, sync=True) \
-	.loadDicomNii(series[seriesUIDs[2]], NII_PATH)
+slicePane = SlicePane('TL', viewer, sync=True)
+slicePane2 = SlicePane('TR', viewer, imageMax=0, maskOpacity=1, sync=True)
+slicePane3 = SlicePane('BL', viewer, sync=True)
 
 # add panes
 viewer.addPane(slicePane, (0,.5,.5,1))
@@ -83,6 +75,24 @@ viewer.addPane(slicePane3, (0,0,.5,.5))
 	('panel.qml', (50,200)),
 	('panel.qml', (150,200))
 ])
+
+def load():
+	# DICOM_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259"
+	path  = QFileDialog().getExistingDirectory()
+	# generate series
+	(series, seriesUIDs) = generateSeries(path)
+	# predict and get nii
+	NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
+	# populate slice panes
+	slicePane.loadDicomNii(series[seriesUIDs[2]])
+	slicePane2.loadDicomNii(series[seriesUIDs[2]], NII_PATH)
+	slicePane3.loadDicomNii(series[seriesUIDs[2]], NII_PATH)
+
+# menu bar
+fileMenu = QMenu('File')
+fileMenu.addAction('Load', load)
+menuBar = QMenuBar()
+menuBar.addMenu(fileMenu)
 
 # layout
 mainWindow.show()
