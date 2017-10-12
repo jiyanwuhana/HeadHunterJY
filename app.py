@@ -45,11 +45,14 @@ def QMLToWidgets(sources):
 ##################################################################################################################### 
 
 # generate dicom series file names
-DICOM_PATH = "/Users/benjaminhon/Developer/data/bpynz/M489106/001321140"
+DICOM_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259"
 generator = itk.GDCMSeriesFileNames.New()
 generator.SetDirectory(DICOM_PATH)
 seriesUIDs = generator.GetSeriesUIDs()
 series = { uid: generator.GetFileNames(uid) for uid in generator.GetSeriesUIDs() }
+
+# nii path
+NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
 
 app = QApplication([])
 mainWindow = MainWindow()
@@ -60,13 +63,16 @@ viewer.setMinimumHeight(600)
 
 # Slice Pane
 slicePane = SlicePane('TL', viewer)
-slicePane.loadDicom(series[seriesUIDs[3]])
-slicePane2 = SlicePane('TR', viewer)
-slicePane2.loadDicom(series[seriesUIDs[3]])
+slicePane.loadDicomNii(series[seriesUIDs[2]])
+slicePane2 = SlicePane('TR', viewer, imageMax=0, maskOpacity=1)
+slicePane2.loadDicomNii(series[seriesUIDs[2]], NII_PATH)
+slicePane3 = SlicePane('BL', viewer)
+slicePane3.loadDicomNii(series[seriesUIDs[2]], NII_PATH)
 
 # Add panes
 viewer.addPane(slicePane, (0,.5,.5,1))
 viewer.addPane(slicePane2, (.5,.5,1,1))
+viewer.addPane(slicePane3, (0,0,.5,.5))
 
 # Load qml components
 [topWidget, bottomWidget, leftWidget, rightWidget] = QMLToWidgets([
