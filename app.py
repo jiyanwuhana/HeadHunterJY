@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtCore import Qt, QUrl
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QMenuBar, QMenu
 from PyQt5.QtQuick import QQuickView
 import vtk
 import itk
@@ -61,20 +61,22 @@ viewer = Viewer()
 viewer.setMinimumWidth(800)
 viewer.setMinimumHeight(600)
 
-# Slice Pane
-slicePane = SlicePane('TL', viewer)
-slicePane.loadDicomNii(series[seriesUIDs[2]])
-slicePane2 = SlicePane('TR', viewer, imageMax=0, maskOpacity=1)
-slicePane2.loadDicomNii(series[seriesUIDs[2]], NII_PATH)
-slicePane3 = SlicePane('BL', viewer)
-slicePane3.loadDicomNii(series[seriesUIDs[2]], NII_PATH)
+# slice panes
+slicePane = SlicePane('TL', viewer, sync=True) \
+	.loadDicomNii(series[seriesUIDs[2]])
 
-# Add panes
+slicePane2 = SlicePane('TR', viewer, imageMax=0, maskOpacity=1, sync=True) \
+	.loadDicomNii(series[seriesUIDs[2]], NII_PATH)
+
+slicePane3 = SlicePane('BL', viewer, sync=True) \
+	.loadDicomNii(series[seriesUIDs[2]], NII_PATH)
+
+# add panes
 viewer.addPane(slicePane, (0,.5,.5,1))
 viewer.addPane(slicePane2, (.5,.5,1,1))
 viewer.addPane(slicePane3, (0,0,.5,.5))
 
-# Load qml components
+# load qml components
 [topWidget, bottomWidget, leftWidget, rightWidget] = QMLToWidgets([
 	('panel.qml', (250,50)),
 	('panel.qml', (250,50)),
@@ -84,9 +86,9 @@ viewer.addPane(slicePane3, (0,0,.5,.5))
 
 # layout
 mainWindow.show()
-mainWindow.topPanel.addWidget(topWidget)
-mainWindow.bottomPanel.addWidget(bottomWidget)
-mainWindow.leftPanel.addWidget(leftWidget)
+# mainWindow.topPanel.addWidget(topWidget)
+# mainWindow.bottomPanel.addWidget(bottomWidget)
+# mainWindow.leftPanel.addWidget(leftWidget)
 mainWindow.rightPanel.addWidget(rightWidget)
 mainWindow.centerPanel.addWidget(viewer)
 

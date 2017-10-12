@@ -29,19 +29,20 @@ class Pane():
 
 class SlicePane(Pane):
   
-  def __init__(self, uid, viewer, imageMax=255, maskOpacity=0.5):
+  def __init__(self, uid, viewer, imageMax=255, maskOpacity=0.5, sync=False):
     self.imageMax = imageMax
     self.maskOpacity = maskOpacity
+    self.sync = sync
     self.uid = uid
     self.imageViewer = vtk.vtkImageViewer2()
     self.imageViewer.SetRenderWindow(viewer.renderWindow) # don't use the vtkImageViewer2 render window
     super().__init__(uid, self.imageViewer.GetRenderer(), viewer)
     # subscribe to viewer events
     viewer.events.mouseWheelForward \
-      .filter(lambda ev: ev[0] == self.uid) \
+      .filter(lambda ev: self.sync or ev[0] == self.uid) \
       .subscribe(lambda ev: self.nextSlice())
     viewer.events.mouseWheelBackward \
-      .filter(lambda ev: ev[0] == self.uid) \
+      .filter(lambda ev: self.sync or ev[0] == self.uid) \
       .subscribe(lambda ev: self.previousSlice())
 
   def setupCamera(self):
@@ -57,6 +58,7 @@ class SlicePane(Pane):
     self.maxSlice = self.imageViewer.GetSliceMax()
     self.slice = round((self.minSlice + self.maxSlice) / 2)
     self.imageViewer.SetSlice(self.slice)
+    return self
 
   def setupPipeline(self, fileNames, niiPath):
     # DICOM pipeline
