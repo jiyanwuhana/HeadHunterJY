@@ -59,14 +59,14 @@ viewer.setMinimumWidth(800)
 viewer.setMinimumHeight(600)
 
 # slice panes
-slicePane = SlicePane('TL', viewer, sync=True)
-slicePane2 = SlicePane('TR', viewer, imageMax=0, maskOpacity=1, sync=True)
-slicePane3 = SlicePane('BL', viewer, sync=True)
+slicePaneTL = SlicePane('TL', viewer, sync=True)
+slicePaneTR = SlicePane('TR', viewer, imageMax=0, maskOpacity=1, sync=True)
+slicePaneBL = SlicePane('BL', viewer, sync=True)
 
 # add panes
-viewer.addPane(slicePane, (0,.5,.5,1))
-viewer.addPane(slicePane2, (.5,.5,1,1))
-viewer.addPane(slicePane3, (0,0,.5,.5))
+viewer.addPane(slicePaneTL, (0,.5,.5,1))
+viewer.addPane(slicePaneTR, (.5,.5,1,1))
+viewer.addPane(slicePaneBL, (0,0,.5,.5))
 
 # load qml components
 [topWidget, bottomWidget, leftWidget, rightWidget] = QMLToWidgets([
@@ -81,12 +81,17 @@ def load():
 	path  = QFileDialog().getExistingDirectory()
 	# generate series
 	(series, seriesUIDs) = generateSeries(path)
+	print(seriesUIDs)
+
 	# predict and get nii
 	NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
+
+	# predict and get seriesUID and numpy array
+
 	# populate slice panes
-	slicePane.loadDicomNii(series[seriesUIDs[2]])
-	slicePane2.loadDicomNii(series[seriesUIDs[2]], NII_PATH)
-	slicePane3.loadDicomNii(series[seriesUIDs[2]], NII_PATH)
+	slicePaneTL.loadDicomNii(series[seriesUIDs[2]])
+	slicePaneTR.loadDicomNii(series[seriesUIDs[2]], NII_PATH)
+	slicePaneBL.loadDicomNii(series[seriesUIDs[2]], NII_PATH)
 
 # menu bar
 fileMenu = QMenu('File')

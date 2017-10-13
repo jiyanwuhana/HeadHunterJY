@@ -6,10 +6,11 @@ from vtk import vtkCommand
 ## Constants
 #################################################################################################
 
-IF3     = itk.Image[itk.F, 3]
-IUC3    = itk.Image[itk.UC, 3]
-IRGBUC3 = itk.Image[itk.RGBPixel[itk.UC], 3]
-LMLOUL3 = itk.LabelMap[itk.StatisticsLabelObject[itk.UL, 3]]
+IF3         = itk.Image[itk.F, 3]
+IUC3        = itk.Image[itk.UC, 3]
+IRGBUC3     = itk.Image[itk.RGBPixel[itk.UC], 3]
+LMLOUL3     = itk.LabelMap[itk.StatisticsLabelObject[itk.UL, 3]]
+BACKGROUND  = 60
 
 #################################################################################################
 ## Pane 
@@ -50,8 +51,8 @@ class SlicePane(Pane):
     self.renderer.GetActiveCamera().SetViewUp(0, -1, 0)
     self.renderer.ResetCamera()
 
-  def loadDicomNii(self, fileNames, niiPath=None):
-    self.setupPipeline(fileNames, niiPath)
+  def loadDicomNii(self, fileNames, niiPath=None, numpyMasks=None):
+    self.setupPipeline(fileNames, niiPath=niiPath, numpyMasks=arr)
     self.setupCamera()
     # set slice
     self.minSlice = self.imageViewer.GetSliceMin()
@@ -60,7 +61,7 @@ class SlicePane(Pane):
     self.imageViewer.SetSlice(self.slice)
     return self
 
-  def setupPipeline(self, fileNames, niiPath):
+  def setupPipeline(self, fileNames, niiPath=None, numpyMasks=None):
     # DICOM pipeline
     # itk.ImageFileReader -> itk.ImageSeriesReader -> RescaleIntensityImageFilter -> CastImageFilter -> itk.ImageToVTKImageFilter -> vtkImageViewer2
     imageSeriesReader = itk.ImageSeriesReader[IF3].New()
@@ -85,7 +86,37 @@ class SlicePane(Pane):
       resampleImageFilter.SetReferenceImage(imageSeriesReader.GetOutput())
       labelImageToLabelMapFilter = itk.LabelImageToLabelMapFilter[IUC3, LMLOUL3].New()
       labelImageToLabelMapFilter.SetInput(resampleImageFilter.GetOutput())
+      # Merge pipelines
+      labelMapOverlayImageFilter = itk.LabelMapOverlayImageFilter[LMLOUL3, IUC3, IRGBUC3].New()
+      labelMapOverlayImageFilter.SetInput(labelImageToLabelMapFilter.GetOutput())
+      labelMapOverlayImageFilter.SetFeatureImage(caster.GetOutput())
+      labelMapOverlayImageFilter.SetOpacity(self.maskOpacity);
 
+    elif numpyMasks:
+      # NII pipeline
+      # Itk.changeInformationImageFilter -> itk.ResampleImageFilter -> itk.LabelImageToLabelMapFilter -> itk.LabelMapOverlayImageFilter
+      masks = [ v for k, v in numpyMasks.items() ]
+      backgroundArr = np.full(masks[0].shape, BACKGROUND)
+      masks = backgroundArr + masks
+      argMax = np.argmax(masks, axis=0).astype(np.uint8)
+      masksImage.GetImageFromArray(argMax)
+      # Set Reference Origin, Spacing, Direction
+      changeInformationImageFilter = itk.ChangeInformationImageFilter[IUC3].New()
+      changeInformationImageFilter.SetInput(masksImage)
+      changeInformationImageFilter.UseReferenceImageOn()
+      changeInformationImageFilter.ChangeDirectionOn()
+      changeInformationImageFilter.ChangeSpacingOn()
+      changeInformationImageFilter.ChangeOriginOn()
+      changeInformationImageFilter.SetReferenceImage(caster.GetOutput())
+      # Resample
+      resampleImageFilter = itk.ResampleImageFilter[IUC3, IUC3].New()
+      resampleImageFilter.SetInput(changeInformationImageFilter.GetOutput())
+      resampleImageFilter.SetTransform(itk.IdentityTransform[itk.D, 3].New())
+      resampleImageFilter.SetInterpolator(itk.NearestNeighborInterpolateImageFunction[IUC3, itk.D].New())
+      resampleImageFilter.UseReferenceImageOn()
+      resampleImageFilter.SetReferenceImage(imageSeriesReader.GetOutput())
+      labelImageToLabelMapFilter = itk.LabelImageToLabelMapFilter[IUC3, LMLOUL3].New()
+      labelImageToLabelMapFilter.SetInput(resampleImageFilter.GetOutput())
       # Merge pipelines
       labelMapOverlayImageFilter = itk.LabelMapOverlayImageFilter[LMLOUL3, IUC3, IRGBUC3].New()
       labelMapOverlayImageFilter.SetInput(labelImageToLabelMapFilter.GetOutput())
