@@ -1,6 +1,8 @@
 import itk
 import vtk
 from vtk import vtkCommand
+import numpy as np
+
 
 #################################################################################################
 ## Constants
@@ -10,7 +12,7 @@ IF3         = itk.Image[itk.F, 3]
 IUC3        = itk.Image[itk.UC, 3]
 IRGBUC3     = itk.Image[itk.RGBPixel[itk.UC], 3]
 LMLOUL3     = itk.LabelMap[itk.StatisticsLabelObject[itk.UL, 3]]
-BACKGROUND  = 60
+BACKGROUND  = 0.4
 
 #################################################################################################
 ## Pane 
@@ -52,7 +54,7 @@ class SlicePane(Pane):
     self.renderer.ResetCamera()
 
   def loadDicomNii(self, fileNames, niiPath=None, numpyMasks=None):
-    self.setupPipeline(fileNames, niiPath=niiPath, numpyMasks=arr)
+    self.setupPipeline(fileNames, niiPath=niiPath, numpyMasks=numpyMasks)
     self.setupCamera()
     # set slice
     self.minSlice = self.imageViewer.GetSliceMin()
@@ -87,22 +89,21 @@ class SlicePane(Pane):
       labelImageToLabelMapFilter = itk.LabelImageToLabelMapFilter[IUC3, LMLOUL3].New()
       labelImageToLabelMapFilter.SetInput(resampleImageFilter.GetOutput())
       # Merge pipelines
-      labelMapOverlayImageFilter = itk.LabelMapOverlayImageFilter[LMLOUL3, IUC3, IRGBUC3].New()
-      labelMapOverlayImageFilter.SetInput(labelImageToLabelMapFilter.GetOutput())
-      labelMapOverlayImageFilter.SetFeatureImage(caster.GetOutput())
-      labelMapOverlayImageFilter.SetOpacity(self.maskOpacity);
+      self.labelMapOverlayImageFilter = itk.LabelMapOverlayImageFilter[LMLOUL3, IUC3, IRGBUC3].New()
+      self.labelMapOverlayImageFilter.SetInput(labelImageToLabelMapFilter.GetOutput())
+      self.labelMapOverlayImageFilter.SetFeatureImage(caster.GetOutput())
+      self.labelMapOverlayImageFilter.SetOpacity(self.maskOpacity);
 
-    elif numpyMasks:
+    elif numpyMasks and len(numpyMasks) != 0:
       # NII pipeline
       # Itk.changeInformationImageFilter -> itk.ResampleImageFilter -> itk.LabelImageToLabelMapFilter -> itk.LabelMapOverlayImageFilter
-      masks = [ v for k, v in numpyMasks.items() ]
-      backgroundArr = np.full(masks[0].shape, BACKGROUND)
-      masks = backgroundArr + masks
-      argMax = np.argmax(masks, axis=0).astype(np.uint8)
-      masksImage.GetImageFromArray(argMax)
+      backgroundArr = np.full(numpyMasks[0].shape, BACKGROUND)
+      combined = [backgroundArr] + numpyMasks
+      argMax = np.argmax(combined, axis=0).astype(np.uint8)
+      segmentationImage = itk.GetImageFromArray(argMax)
       # Set Reference Origin, Spacing, Direction
       changeInformationImageFilter = itk.ChangeInformationImageFilter[IUC3].New()
-      changeInformationImageFilter.SetInput(masksImage)
+      changeInformationImageFilter.SetInput(segmentationImage)
       changeInformationImageFilter.UseReferenceImageOn()
       changeInformationImageFilter.ChangeDirectionOn()
       changeInformationImageFilter.ChangeSpacingOn()
@@ -118,15 +119,16 @@ class SlicePane(Pane):
       labelImageToLabelMapFilter = itk.LabelImageToLabelMapFilter[IUC3, LMLOUL3].New()
       labelImageToLabelMapFilter.SetInput(resampleImageFilter.GetOutput())
       # Merge pipelines
-      labelMapOverlayImageFilter = itk.LabelMapOverlayImageFilter[LMLOUL3, IUC3, IRGBUC3].New()
-      labelMapOverlayImageFilter.SetInput(labelImageToLabelMapFilter.GetOutput())
-      labelMapOverlayImageFilter.SetFeatureImage(caster.GetOutput())
-      labelMapOverlayImageFilter.SetOpacity(self.maskOpacity);
+      self.labelMapOverlayImageFilter = itk.LabelMapOverlayImageFilter[LMLOUL3, IUC3, IRGBUC3].New()
+      self.labelMapOverlayImageFilter.SetInput(labelImageToLabelMapFilter.GetOutput())
+      self.labelMapOverlayImageFilter.SetFeatureImage(caster.GetOutput())
+      self.labelMapOverlayImageFilter.SetOpacity(self.maskOpacity);
+      self.labelMapOverlayImageFilter.Update()
 
     # Itk to Vtk
-    if niiPath:
+    if niiPath or numpyMasks:
       self.imageToVTKImageFilter = itk.ImageToVTKImageFilter[IRGBUC3].New()
-      self.imageToVTKImageFilter.SetInput(labelMapOverlayImageFilter.GetOutput())
+      self.imageToVTKImageFilter.SetInput(self.labelMapOverlayImageFilter.GetOutput())
     else:
       self.imageToVTKImageFilter = itk.ImageToVTKImageFilter[IUC3].New()
       self.imageToVTKImageFilter.SetInput(caster.GetOutput())

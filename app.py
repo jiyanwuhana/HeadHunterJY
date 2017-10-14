@@ -5,6 +5,7 @@ from PyQt5.QtQuick import QQuickView
 import vtk
 import itk
 from Viewer import Viewer, Pane, SlicePane
+from winson_integration import AINI
 
 #####################################################################################################################
 ## CLASSES
@@ -81,17 +82,27 @@ def load():
 	path  = QFileDialog().getExistingDirectory()
 	# generate series
 	(series, seriesUIDs) = generateSeries(path)
-	print(seriesUIDs)
 
 	# predict and get nii
 	NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
 
 	# predict and get seriesUID and numpy array
+	aini = AINI()
+	aini.initModel()
+	aini.restoreModel()
+	prediction = aini.predictClassification(path)
+
+	
+	print(prediction['UID'])
+	print()
+
+	masksNumpy = [ maskInfo['mask'] for maskName, maskInfo in prediction['MASK'].items() ]
+
 
 	# populate slice panes
-	slicePaneTL.loadDicomNii(series[seriesUIDs[2]])
-	slicePaneTR.loadDicomNii(series[seriesUIDs[2]], NII_PATH)
-	slicePaneBL.loadDicomNii(series[seriesUIDs[2]], NII_PATH)
+	slicePaneTL.loadDicomNii(series[prediction['UID']])
+	slicePaneTR.loadDicomNii(series[prediction['UID']], numpyMasks=masksNumpy)
+	slicePaneBL.loadDicomNii(series[prediction['UID']], numpyMasks=masksNumpy)
 
 # menu bar
 fileMenu = QMenu('File')
