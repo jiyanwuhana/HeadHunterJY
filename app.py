@@ -5,21 +5,21 @@ from PyQt5.QtQuick import QQuickView
 import vtk
 import itk
 from Viewer import Viewer, Pane, SlicePane
-from winson_integration import AINI
 
-import zerorpc
-import numpy as np
+# from winson_integration import AINI
+# import zerorpc
+# import numpy as np
 
-#############################################################################
-## RPC
-#############################################################################
+# #############################################################################
+# ## RPC
+# #############################################################################
 
-config  = {
-  "rpc": 			"tcp://0.0.0.0:3000",
-  "storage": 	"/Users/benjaminhon/Developer/Classifier/demo/storage"
-}
+# config  = {
+#   "rpc": 			"tcp://0.0.0.0:3000",
+#   "storage": 	"/Users/benjaminhon/Developer/Classifier/demo/storage"
+# }
 
-rpc     = zerorpc.Client(config['rpc'], timeout=3000, heartbeat=None)
+# rpc     = zerorpc.Client(config['rpc'], timeout=3000, heartbeat=None)
 
 #####################################################################################################################
 ## CLASSES
@@ -27,7 +27,7 @@ rpc     = zerorpc.Client(config['rpc'], timeout=3000, heartbeat=None)
 
 class MainWindow(QMainWindow):
 
-	classificationChanged  = pyqtSignal()
+	# classificationChanged  = pyqtSignal()
 
 	def __init__(self, parent=None):
 		super().__init__(parent)
@@ -51,27 +51,14 @@ class MainWindow(QMainWindow):
 
 		self._classification = ''
 
-	@pyqtProperty(str, notify=classificationChanged)
-	def classification(self):
-		return self._classification
+	# @pyqtProperty(str, notify=classificationChanged)
+	# def classification(self):
+	# 	return self._classification
 
-	@classification.setter
-	def classification(self, text):
-		self._classification = text
-		self.classificationChanged.emit()
-
-def QMLToWidgets(sources):
-	"""
-	[(url, size)] -> [widget]
-	"""
-	widgets = []
-	for source, size in sources:
-		component = QQuickView()
-		component.setSource(QUrl(source))
-		widget = QWidget.createWindowContainer(component, component)
-		widget.setMinimumSize(*size)
-		widgets.append(widget)
-	return widgets
+	# @classification.setter
+	# def classification(self, text):
+	# 	self._classification = text
+	# 	self.classificationChanged.emit()
 
 def generateSeries(path):
 	generator = itk.GDCMSeriesFileNames.New()
@@ -101,14 +88,7 @@ viewer.addPane(slicePaneTL, (0,.5,.5,1))
 viewer.addPane(slicePaneTR, (.5,.5,1,1))
 viewer.addPane(slicePaneBL, (0,0,.5,.5))
 
-# # load qml components
-# [topWidget, bottomWidget, leftWidget, rightWidget] = QMLToWidgets([
-# 	('panel.qml', (250,50)),
-# 	('panel.qml', (250,50)),
-# 	('panel.qml', (50,200)),
-# 	('panel.qml', (150,200))
-# ])
-
+# right QML widget
 component = QQuickView()
 component.rootContext().setContextProperty("MainWindow", mainWindow)
 component.setSource(QUrl('panel_eugene.qml'))
@@ -116,37 +96,52 @@ rightWidget = QWidget.createWindowContainer(component)
 rightWidget.setMinimumSize(300,200)
 
 def load():
-	# DICOM_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259"
-	path  = QFileDialog().getExistingDirectory()
-	# generate series
-	(series, seriesUIDs) = generateSeries(path)
+	pass
+	# # DICOM_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259"
+	# path  = QFileDialog().getExistingDirectory()
+	# # generate series
+	# (series, seriesUIDs) = generateSeries(path)
 
-	# predict and get nii
-	NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
+	# # predict and get nii
+	# NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
 
-	# predict and get seriesUID and numpy array
-	aini = AINI()
-	aini.initModel()
-	aini.restoreModel()
-	prediction = aini.predictClassification(filepath=path)
+	# # # predict and get seriesUID and numpy array
+	# # aini = AINI()
+	# # aini.initModel()
+	# # aini.restoreModel()
+	# # prediction = aini.predictClassification(filepath=path)
 
 
-	masksArr = [ maskInfo['mask'] for maskName, maskInfo in prediction['MASK'].items() ]
-	classifications = [ maskInfo['label'] for maskName, maskInfo in prediction['MASK'].items() ]
+	# # masksArr = [ maskInfo['mask'] for maskName, maskInfo in prediction['MASK'].items() ]
+	# # classifications = [ maskInfo['label'] for maskName, maskInfo in prediction['MASK'].items() ]
 
-	displayClassification = ''
-	for m in classifications:
-		for k, v in m.items():
-			displayClassification = displayClassification + k + ': ' + str(v) + '\n'
-		displayClassification = displayClassification + '\n'
+	# # displayClassification = ''
+	# # for m in classifications:
+	# # 	for k, v in m.items():
+	# # 		displayClassification = displayClassification + k + ': ' + str(v) + '\n'
+	# # 	displayClassification = displayClassification + '\n'
 
-	# update classification
-	mainWindow.classification = displayClassification
+	# # # update classification
+	# # mainWindow.classification = displayClassification
 
+	# # populate slice panes
+	# slicePaneTL.loadDicomNii(series[prediction['UID']])
+	# slicePaneTR.loadDicomNii(series[prediction['UID']], numpyMasks=masksArr)
+	# slicePaneBL.loadDicomNii(series[prediction['UID']], numpyMasks=masksArr)
+
+
+def test():
 	# populate slice panes
-	slicePaneTL.loadDicomNii(series[prediction['UID']])
-	slicePaneTR.loadDicomNii(series[prediction['UID']], numpyMasks=masksArr)
-	slicePaneBL.loadDicomNii(series[prediction['UID']], numpyMasks=masksArr)
+	NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
+	DICOM_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259"
+
+	(series, seriesUIDs) = generateSeries(DICOM_PATH)
+
+	slicePaneTL.loadDicomNii(series[seriesUIDs[2]])
+	slicePaneTR.loadDicomNii(series[seriesUIDs[2]], niiPath=NII_PATH)
+	slicePaneBL.loadDicomNii(series[seriesUIDs[2]], niiPath=NII_PATH)
+
+test()
 
 # menu bar
 fileMenu = QMenu('File')
