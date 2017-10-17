@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtCore import Qt, QUrl, pyqtSlot, pyqtProperty, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QMenuBar, QMenu, QFileDialog
 from PyQt5.QtQuick import QQuickView
 import vtk
@@ -7,26 +7,58 @@ import itk
 from Viewer import Viewer, Pane, SlicePane
 from winson_integration import AINI
 
+import zerorpc
+import numpy as np
+
+#############################################################################
+## RPC
+#############################################################################
+
+config  = {
+  "rpc": 			"tcp://0.0.0.0:3000",
+  "storage": 	"/Users/benjaminhon/Developer/Classifier/demo/storage"
+}
+
+rpc     = zerorpc.Client(config['rpc'], timeout=3000, heartbeat=None)
+
 #####################################################################################################################
 ## CLASSES
 ##################################################################################################################### 
 
 class MainWindow(QMainWindow):
+
+	classificationChanged  = pyqtSignal()
+
 	def __init__(self, parent=None):
 		super().__init__(parent)
 		centralWidget = QWidget(self)
 		gridlayout = QGridLayout(centralWidget)
+		gridlayout.setContentsMargins(0,0,0,0)
+		gridlayout.setHorizontalSpacing(0)
+
 		self.setCentralWidget(centralWidget)
 		self.rightPanel = QVBoxLayout()
 		self.leftPanel = QVBoxLayout()
 		self.topPanel = QHBoxLayout()
 		self.bottomPanel = QHBoxLayout()
 		self.centerPanel = QHBoxLayout()
+
 		gridlayout.addLayout(self.topPanel, 0, 0, 1, 3)
 		gridlayout.addLayout(self.bottomPanel, 2, 0, 1, 3)
 		gridlayout.addLayout(self.leftPanel, 1, 0, 1, 1)
 		gridlayout.addLayout(self.rightPanel, 1, 2, 1, 1)
 		gridlayout.addLayout(self.centerPanel, 1, 1, 1, 1)
+
+		self._classification = ''
+
+	@pyqtProperty(str, notify=classificationChanged)
+	def classification(self):
+		return self._classification
+
+	@classification.setter
+	def classification(self, text):
+		self._classification = text
+		self.classificationChanged.emit()
 
 def QMLToWidgets(sources):
 	"""
@@ -36,7 +68,7 @@ def QMLToWidgets(sources):
 	for source, size in sources:
 		component = QQuickView()
 		component.setSource(QUrl(source))
-		widget = QWidget.createWindowContainer(component)
+		widget = QWidget.createWindowContainer(component, component)
 		widget.setMinimumSize(*size)
 		widgets.append(widget)
 	return widgets
@@ -56,8 +88,8 @@ app = QApplication([])
 mainWindow = MainWindow()
 
 viewer = Viewer()
-viewer.setMinimumWidth(800)
-viewer.setMinimumHeight(600)
+viewer.setMinimumWidth(1000)
+viewer.setMinimumHeight(800)
 
 # slice panes
 slicePaneTL = SlicePane('TL', viewer, sync=True)
@@ -69,13 +101,19 @@ viewer.addPane(slicePaneTL, (0,.5,.5,1))
 viewer.addPane(slicePaneTR, (.5,.5,1,1))
 viewer.addPane(slicePaneBL, (0,0,.5,.5))
 
-# load qml components
-[topWidget, bottomWidget, leftWidget, rightWidget] = QMLToWidgets([
-	('panel.qml', (250,50)),
-	('panel.qml', (250,50)),
-	('panel.qml', (50,200)),
-	('panel.qml', (150,200))
-])
+# # load qml components
+# [topWidget, bottomWidget, leftWidget, rightWidget] = QMLToWidgets([
+# 	('panel.qml', (250,50)),
+# 	('panel.qml', (250,50)),
+# 	('panel.qml', (50,200)),
+# 	('panel.qml', (150,200))
+# ])
+
+component = QQuickView()
+component.rootContext().setContextProperty("MainWindow", mainWindow)
+component.setSource(QUrl('panel_eugene.qml'))
+rightWidget = QWidget.createWindowContainer(component)
+rightWidget.setMinimumSize(300,200)
 
 def load():
 	# DICOM_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259"
@@ -90,19 +128,25 @@ def load():
 	aini = AINI()
 	aini.initModel()
 	aini.restoreModel()
-	prediction = aini.predictClassification(path)
+	prediction = aini.predictClassification(filepath=path)
 
-	
-	print(prediction['UID'])
-	print()
 
-	masksNumpy = [ maskInfo['mask'] for maskName, maskInfo in prediction['MASK'].items() ]
+	masksArr = [ maskInfo['mask'] for maskName, maskInfo in prediction['MASK'].items() ]
+	classifications = [ maskInfo['label'] for maskName, maskInfo in prediction['MASK'].items() ]
 
+	displayClassification = ''
+	for m in classifications:
+		for k, v in m.items():
+			displayClassification = displayClassification + k + ': ' + str(v) + '\n'
+		displayClassification = displayClassification + '\n'
+
+	# update classification
+	mainWindow.classification = displayClassification
 
 	# populate slice panes
 	slicePaneTL.loadDicomNii(series[prediction['UID']])
-	slicePaneTR.loadDicomNii(series[prediction['UID']], numpyMasks=masksNumpy)
-	slicePaneBL.loadDicomNii(series[prediction['UID']], numpyMasks=masksNumpy)
+	slicePaneTR.loadDicomNii(series[prediction['UID']], numpyMasks=masksArr)
+	slicePaneBL.loadDicomNii(series[prediction['UID']], numpyMasks=masksArr)
 
 # menu bar
 fileMenu = QMenu('File')

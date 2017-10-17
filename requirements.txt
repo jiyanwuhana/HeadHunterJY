@@ -16,3 +16,4 @@ tensorflow
 sklearn
 PyQt5
 rx
+zerorpc
