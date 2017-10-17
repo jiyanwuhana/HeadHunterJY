@@ -14,14 +14,38 @@ class Viewer(QVTKRenderWindowInteractor):
   def __init__(self, parent=None):
     super().__init__(parent)
     self.panes = {}
-    self.renderWindow =  self.GetRenderWindow()
+    self.hoveredPane = None
+    self.selectedPane = None
+    self.renderWindow = self.GetRenderWindow()
     self.interactor = self.renderWindow.GetInteractor()
     self.events = ViewerInteractorStyle(self)
     self.interactor.SetInteractorStyle(self.events)
-  
+
+    ########################
+    ## viewer level events
+    ########################
+    # self.events.doubleLeftButtonPress = self.leftButtonPress \
+    #   .buffer(self.leftButtonPress.debounce(300)) \
+    #   .map(lambda l: len(l)) \
+    #   .filter(lambda c: c == 2) \
+    #   .subscribe(lambda s: print('double clicked', s))
+    # self.events.leftButtonDrag = self.leftButtonPress \
+    #   .flat_map(lambda ev: self.mouseMove.take_until(self.leftButtonRelease)) \
+    #   .subscribe(lambda s: print('mouse drag', s))
+    # self.events.mouseMove \
+    #   .subscribe(lambda ev: self.setHoveredPane(ev[0]))
+    # self.events.leftButtonPress \
+    #   .subscribe(lambda ev: self.setSelectedPane(ev[0]))
+      
   def addPane(self, pane, viewPort):
     self.panes[pane.uid] = (pane, viewPort)
     pane.renderer.SetViewport(viewPort)
+
+  def setHoveredPane(self, uid):
+    self.hoveredPane = uid
+
+  def setSelectedPane(self, uid):
+    self.selectedPane = uid
   
   def startEventLoop(self):
     self.interactor.Initialize()
@@ -57,24 +81,18 @@ class ViewerInteractorStyle(vtk.vtkInteractorStyleUser):
       .map(lambda ev: self.eventPosition())
     self.mouseMove = mouseMove \
       .map(lambda ev: self.eventPosition())
-    # viewer events
-    self.doubleLeftButtonPress = self.leftButtonPress \
-      .buffer(self.leftButtonPress.debounce(300)) \
-      .map(lambda l: len(l)) \
-      .filter(lambda c: c == 2) \
-      .subscribe(lambda s: print('double clicked', s))
-    self.leftButtonDrag = self.leftButtonPress \
-      .flat_map(lambda ev: self.mouseMove.take_until(self.leftButtonRelease)) \
-      .subscribe(lambda s: print('mouse drag', s))
 
   def eventPosition(self):
     (x, y) = self.GetInteractor().GetEventPosition()
+    (xp, yp) = self.GetInteractor().GetLastEventPosition()
     ratio = self.viewer.devicePixelRatio() # VTK BUG for Retina Display
     x = x * ratio
     y = y * ratio
+    xp = xp * ratio
+    yp = yp * ratio
     for uid, (pane, viewPort) in self.viewer.panes.items():
       if self.isPointInPane(x, y, viewPort):
-        return (uid, x, y)
+        return (uid, (x, y), (xp, yp))
 
   def isPointInPane(self, x, y, viewPort):
     (w, h) = self.viewer.renderWindow.GetSize()

@@ -4,7 +4,8 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVB
 from PyQt5.QtQuick import QQuickView
 import vtk
 import itk
-from Viewer import Viewer, Pane, SlicePane
+from Viewer import Viewer, SlicePane
+from Models import DicomSeries, LabelMap, Overlay
 
 # from winson_integration import AINI
 # import zerorpc
@@ -49,7 +50,7 @@ class MainWindow(QMainWindow):
 		gridlayout.addLayout(self.rightPanel, 1, 2, 1, 1)
 		gridlayout.addLayout(self.centerPanel, 1, 1, 1, 1)
 
-		self._classification = ''
+		# self._classification = ''
 
 	# @pyqtProperty(str, notify=classificationChanged)
 	# def classification(self):
@@ -80,7 +81,7 @@ viewer.setMinimumHeight(800)
 
 # slice panes
 slicePaneTL = SlicePane('TL', viewer, sync=True)
-slicePaneTR = SlicePane('TR', viewer, imageMax=0, maskOpacity=1, sync=True)
+slicePaneTR = SlicePane('TR', viewer, sync=True)
 slicePaneBL = SlicePane('BL', viewer, sync=True)
 
 # add panes
@@ -88,12 +89,12 @@ viewer.addPane(slicePaneTL, (0,.5,.5,1))
 viewer.addPane(slicePaneTR, (.5,.5,1,1))
 viewer.addPane(slicePaneBL, (0,0,.5,.5))
 
-# right QML widget
-component = QQuickView()
-component.rootContext().setContextProperty("MainWindow", mainWindow)
-component.setSource(QUrl('panel_eugene.qml'))
-rightWidget = QWidget.createWindowContainer(component)
-rightWidget.setMinimumSize(300,200)
+# # right QML widget
+# component = QQuickView()
+# component.rootContext().setContextProperty("MainWindow", mainWindow)
+# component.setSource(QUrl('panel_eugene.qml'))
+# rightWidget = QWidget.createWindowContainer(component)
+# rightWidget.setMinimumSize(300,200)
 
 def load():
 	pass
@@ -110,7 +111,6 @@ def load():
 	# # aini.initModel()
 	# # aini.restoreModel()
 	# # prediction = aini.predictClassification(filepath=path)
-
 
 	# # masksArr = [ maskInfo['mask'] for maskName, maskInfo in prediction['MASK'].items() ]
 	# # classifications = [ maskInfo['label'] for maskName, maskInfo in prediction['MASK'].items() ]
@@ -129,17 +129,18 @@ def load():
 	# slicePaneTR.loadDicomNii(series[prediction['UID']], numpyMasks=masksArr)
 	# slicePaneBL.loadDicomNii(series[prediction['UID']], numpyMasks=masksArr)
 
-
 def test():
-	# populate slice panes
 	NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
 	DICOM_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259"
 
 	(series, seriesUIDs) = generateSeries(DICOM_PATH)
 
-	slicePaneTL.loadDicomNii(series[seriesUIDs[2]])
-	slicePaneTR.loadDicomNii(series[seriesUIDs[2]], niiPath=NII_PATH)
-	slicePaneBL.loadDicomNii(series[seriesUIDs[2]], niiPath=NII_PATH)
+	dicomSeries = DicomSeries(series[seriesUIDs[2]])
+
+	
+	slicePaneTL.loadModel(dicomSeries)
+	# slicePaneTR.loadDicomNii(series[seriesUIDs[2]], niiPath=NII_PATH)
+	# slicePaneBL.loadDicomNii(series[seriesUIDs[2]], niiPath=NII_PATH)
 
 test()
 
@@ -154,7 +155,7 @@ mainWindow.show()
 # mainWindow.topPanel.addWidget(topWidget)
 # mainWindow.bottomPanel.addWidget(bottomWidget)
 # mainWindow.leftPanel.addWidget(leftWidget)
-mainWindow.rightPanel.addWidget(rightWidget)
+# mainWindow.rightPanel.addWidget(rightWidget)
 mainWindow.centerPanel.addWidget(viewer)
 
 viewer.startEventLoop()

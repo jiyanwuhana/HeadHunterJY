@@ -1,10 +1,6 @@
 import itk
 import vtk
 
-#################################################################################################
-## Constants
-#################################################################################################
-
 IF3         = itk.Image[itk.F, 3]
 IUC3        = itk.Image[itk.UC, 3]
 IRGBUC3     = itk.Image[itk.RGBPixel[itk.UC], 3]
@@ -15,6 +11,7 @@ class LabelMap():
   def __init__(self, niiPath=None, numpyLabelMap=None):
     self.niiPath = niiPath
     self.numpyLabelMap = numpyLabelMap
+    self.type = LMLOUL3
     if niiPath:
       self.generatePipeline(niiPath=niiPath)
     elif numpyLabelMap:
@@ -51,12 +48,6 @@ class LabelMap():
       resampleImageFilter.SetReferenceImage(imageSeriesReader.GetOutput())
       self.labelImageToLabelMapFilter = itk.LabelImageToLabelMapFilter[IUC3, LMLOUL3].New()
       self.labelImageToLabelMapFilter.SetInput(resampleImageFilter.GetOutput())
-    
-    # Merge pipelines
-    self.labelMapOverlayImageFilter = itk.LabelMapOverlayImageFilter[LMLOUL3, IUC3, IRGBUC3].New()
-    self.labelMapOverlayImageFilter.SetInput(labelImageToLabelMapFilter.GetOutput())
-    self.labelMapOverlayImageFilter.SetFeatureImage(caster.GetOutput())
-    self.labelMapOverlayImageFilter.SetOpacity(self.maskOpacity)
 
-  def GetOutput():
-    self.labelMapOverlayImageFilter.GetOutput()
+  def GetOutputPipe():
+    return self.labelMapOverlayImageFilter

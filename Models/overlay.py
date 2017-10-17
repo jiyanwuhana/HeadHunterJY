@@ -5,10 +5,6 @@ import numpy as np
 from .dicom_series import DicomSeries
 from .label_map import LabelMap
 
-#################################################################################################
-## Constants
-#################################################################################################
-
 IF3         = itk.Image[itk.F, 3]
 IUC3        = itk.Image[itk.UC, 3]
 IRGBUC3     = itk.Image[itk.RGBPixel[itk.UC], 3]
@@ -17,6 +13,7 @@ LMLOUL3     = itk.LabelMap[itk.StatisticsLabelObject[itk.UL, 3]]
 class Overlay():
   
   def __init__(self, dicomFileNames, niiPath=None, numpyLabelMap=None, maskOpacity=0.5):
+    self.type = IRGBUC3
     self.dicomFileNames = dicomFileNames
     self.niiPath = niiPath
     self.numpyLabelMap = numpyLabelMap
@@ -35,5 +32,5 @@ class Overlay():
     self.labelMapOverlayImageFilter.SetFeatureImage(dicomSeries.GetOutput())
     self.labelMapOverlayImageFilter.SetOpacity(self.maskOpacity);
 
-  def GetOutput(self):
-    self.labelMapOverlayImageFilter.GetOutput()
+  def GetOutputPipe(self):
+    return self.labelMapOverlayImageFilter

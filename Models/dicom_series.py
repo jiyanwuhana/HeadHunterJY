@@ -1,10 +1,6 @@
 import itk
 import vtk
 
-#################################################################################################
-## Constants
-#################################################################################################
-
 IF3         = itk.Image[itk.F, 3]
 IUC3        = itk.Image[itk.UC, 3]
 IRGBUC3     = itk.Image[itk.RGBPixel[itk.UC], 3]
@@ -14,6 +10,7 @@ class DicomSeries():
   
   def __init__(self, fileNames):
     self.fileNames = fileNames
+    self.type = IUC3
     self.generatePipeline(fileNames)
 
   def generatePipeline(self, fileNames):
@@ -28,6 +25,7 @@ class DicomSeries():
     rescaler.SetOutputMinimum(0)
     self.caster = itk.CastImageFilter[IF3, IUC3].New()
     self.caster.SetInput(rescaler.GetOutput())
+    self.caster.Update()
 
   def GetOutput(self):
-    self.caster.GetOutput()
+    return self.caster.GetOutput()
