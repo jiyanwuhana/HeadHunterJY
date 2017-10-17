@@ -136,11 +136,12 @@ def test():
 	(series, seriesUIDs) = generateSeries(DICOM_PATH)
 
 	dicomSeries = DicomSeries(series[seriesUIDs[2]])
-
+	mask = LabelMap(dicomSeries.GetOutput(), niiPath=NII_PATH)
+	overlay = Overlay(series[seriesUIDs[2]], niiPath = NII_PATH)
 	
 	slicePaneTL.loadModel(dicomSeries)
-	# slicePaneTR.loadDicomNii(series[seriesUIDs[2]], niiPath=NII_PATH)
-	# slicePaneBL.loadDicomNii(series[seriesUIDs[2]], niiPath=NII_PATH)
+	slicePaneTR.loadModel(mask)
+	slicePaneBL.loadModel(overlay)
 
 test()
 

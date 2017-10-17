@@ -2,6 +2,11 @@ import vtk
 import itk
 from .pane import Pane
 
+IF3         = itk.Image[itk.F, 3]
+IUC3        = itk.Image[itk.UC, 3]
+IRGBUC3     = itk.Image[itk.RGBPixel[itk.UC], 3]
+LMLOUL3     = itk.LabelMap[itk.StatisticsLabelObject[itk.UL, 3]]
+
 class SlicePane(Pane):
   
   def __init__(self, uid, viewer, sync=False):
@@ -21,8 +26,17 @@ class SlicePane(Pane):
       .subscribe(lambda ev: self.previousSlice())
 
   def loadModel(self, model):
-    self.imageToVTKImageFilter = itk.ImageToVTKImageFilter[model.type].New()
-    self.imageToVTKImageFilter.SetInput(model.GetOutput())
+    # display label maps
+    if model.type == LMLOUL3:
+      labelMapToRGBImageFilter = itk.LabelMapToRGBImageFilter[LMLOUL3, IRGBUC3].New()
+      labelMapToRGBImageFilter.SetInput(model.GetOutput())
+      self.imageToVTKImageFilter = itk.ImageToVTKImageFilter[IRGBUC3].New()
+      self.imageToVTKImageFilter.SetInput(labelMapToRGBImageFilter.GetOutput())
+    # display scalar images or overlay
+    else:
+      self.imageToVTKImageFilter = itk.ImageToVTKImageFilter[model.type].New()
+      self.imageToVTKImageFilter.SetInput(model.GetOutput())
+    # vtk display
     self.imageToVTKImageFilter.Update()
     self.imageViewer.SetInputData(self.imageToVTKImageFilter.GetOutput())
     self.setupCamera()
@@ -51,7 +65,7 @@ class SlicePane(Pane):
     if self.slice != None and self.slice < self.maxSlice:
       self.slice = self.slice + 1
       self.imageViewer.SetSlice(self.slice)
-      self.renderer.Render() # WHY MUST DO THIS, PREVIOUSLY NO NEED
+      self.renderer.Render()
 
   def previousSlice(self):
     if self.slice != None and self.slice > self.minSlice:

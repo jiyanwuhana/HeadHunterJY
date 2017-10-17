@@ -8,16 +8,17 @@ LMLOUL3     = itk.LabelMap[itk.StatisticsLabelObject[itk.UL, 3]]
 
 class LabelMap():
   
-  def __init__(self, niiPath=None, numpyLabelMap=None):
+  def __init__(self, referenceImage, niiPath=None, numpyLabelMap=None):
     self.niiPath = niiPath
     self.numpyLabelMap = numpyLabelMap
     self.type = LMLOUL3
+    self.referenceImage = referenceImage
     if niiPath:
-      self.generatePipeline(niiPath=niiPath)
+      self.generatePipeline(referenceImage, niiPath=niiPath)
     elif numpyLabelMap:
-      self.generatePipeline(numpyLabelMap=numpyLabelMap)
+      self.generatePipeline(referenceImage, numpyLabelMap=numpyLabelMap)
 
-  def generatePipeline(self, niiPath=None, numpyLabelMap=None):
+  def generatePipeline(self, referenceImage, niiPath=None, numpyLabelMap=None):
     if niiPath:
       # itk.ResampleImageFilter -> itk.LabelImageToLabelMapFilter -> itk.LabelMapOverlayImageFilter
       niiReader = itk.ImageFileReader[IUC3].New()
@@ -27,9 +28,10 @@ class LabelMap():
       resampleImageFilter.SetTransform(itk.IdentityTransform[itk.D, 3].New())
       resampleImageFilter.SetInterpolator(itk.NearestNeighborInterpolateImageFunction[IUC3, itk.D].New())
       resampleImageFilter.UseReferenceImageOn()
-      resampleImageFilter.SetReferenceImage(imageSeriesReader.GetOutput())
+      resampleImageFilter.SetReferenceImage(referenceImage)
       self.labelImageToLabelMapFilter = itk.LabelImageToLabelMapFilter[IUC3, LMLOUL3].New()
       self.labelImageToLabelMapFilter.SetInput(resampleImageFilter.GetOutput())
+      self.labelImageToLabelMapFilter.Update()
 
     elif numpyLabelMap:
       # Itk.changeInformationImageFilter -> itk.ResampleImageFilter -> itk.LabelImageToLabelMapFilter -> itk.LabelMapOverlayImageFilter
@@ -45,9 +47,10 @@ class LabelMap():
       resampleImageFilter.SetTransform(itk.IdentityTransform[itk.D, 3].New())
       resampleImageFilter.SetInterpolator(itk.NearestNeighborInterpolateImageFunction[IUC3, itk.D].New())
       resampleImageFilter.UseReferenceImageOn()
-      resampleImageFilter.SetReferenceImage(imageSeriesReader.GetOutput())
+      resampleImageFilter.SetReferenceImage(referenceImage)
       self.labelImageToLabelMapFilter = itk.LabelImageToLabelMapFilter[IUC3, LMLOUL3].New()
       self.labelImageToLabelMapFilter.SetInput(resampleImageFilter.GetOutput())
+      self.labelImageToLabelMapFilter.Update()
 
-  def GetOutputPipe():
-    return self.labelMapOverlayImageFilter
+  def GetOutput(self):
+    return self.labelImageToLabelMapFilter.GetOutput()

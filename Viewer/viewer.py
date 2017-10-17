@@ -32,10 +32,10 @@ class Viewer(QVTKRenderWindowInteractor):
     # self.events.leftButtonDrag = self.leftButtonPress \
     #   .flat_map(lambda ev: self.mouseMove.take_until(self.leftButtonRelease)) \
     #   .subscribe(lambda s: print('mouse drag', s))
-    # self.events.mouseMove \
-    #   .subscribe(lambda ev: self.setHoveredPane(ev[0]))
-    # self.events.leftButtonPress \
-    #   .subscribe(lambda ev: self.setSelectedPane(ev[0]))
+    self.events.mouseMove \
+      .subscribe(lambda ev: self.setHoveredPane(ev[0]))
+    self.events.leftButtonPress \
+      .subscribe(lambda ev: self.setSelectedPane(ev[0]))
       
   def addPane(self, pane, viewPort):
     self.panes[pane.uid] = (pane, viewPort)
@@ -72,15 +72,20 @@ class ViewerInteractorStyle(vtk.vtkInteractorStyleUser):
     self.AddObserver(vtk.vtkCommand.MouseMoveEvent, lambda obj, event: mouseMove.on_next(event))
     # events object
     self.leftButtonPress = leftButtonPress \
-      .map(lambda ev: self.eventPosition())
+      .map(lambda ev: self.eventPosition()) \
+      .filter(lambda ev: ev != None)
     self.leftButtonRelease = leftButtonRelease \
-      .map(lambda ev: self.eventPosition())
+      .map(lambda ev: self.eventPosition()) \
+      .filter(lambda ev: ev != None)
     self.mouseWheelForward = mouseWheelForward \
-      .map(lambda ev: self.eventPosition())
+      .map(lambda ev: self.eventPosition()) \
+      .filter(lambda ev: ev != None)
     self.mouseWheelBackward = mouseWheelBackward \
-      .map(lambda ev: self.eventPosition())
+      .map(lambda ev: self.eventPosition()) \
+      .filter(lambda ev: ev != None)
     self.mouseMove = mouseMove \
-      .map(lambda ev: self.eventPosition())
+      .map(lambda ev: self.eventPosition()) \
+      .filter(lambda ev: ev != None)
 
   def eventPosition(self):
     (x, y) = self.GetInteractor().GetEventPosition()

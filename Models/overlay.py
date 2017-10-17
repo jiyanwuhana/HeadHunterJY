@@ -20,9 +20,9 @@ class Overlay():
     self.maskOpacity = maskOpacity
     self.dicomSeries = DicomSeries(dicomFileNames)
     if niiPath:
-      self.labelMap = LabelMap(niiPath=niiPath)
+      self.labelMap = LabelMap(self.dicomSeries.GetOutput(), niiPath=niiPath)
     elif numpyLabelMap:
-      self.labelMap = LabelMap(numpyLabelMap=numpyLabelMap)
+      self.labelMap = LabelMap(self.dicomSeries.GetOutput(), numpyLabelMap=numpyLabelMap)
     self.generatePipeline(self.dicomSeries, self.labelMap)
 
   def generatePipeline(self, dicomSeries, labelMap):
@@ -31,6 +31,7 @@ class Overlay():
     self.labelMapOverlayImageFilter.SetInput(labelMap.GetOutput())
     self.labelMapOverlayImageFilter.SetFeatureImage(dicomSeries.GetOutput())
     self.labelMapOverlayImageFilter.SetOpacity(self.maskOpacity);
+    self.labelMapOverlayImageFilter.Update()
 
-  def GetOutputPipe(self):
-    return self.labelMapOverlayImageFilter
+  def GetOutput(self):
+    return self.labelMapOverlayImageFilter.GetOutput()
