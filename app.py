@@ -132,13 +132,11 @@ def load():
 def test():
 	NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
 	DICOM_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259"
-
 	(series, seriesUIDs) = generateSeries(DICOM_PATH)
-
 	dicomSeries = DicomSeries(series[seriesUIDs[2]])
-	mask = LabelMap(dicomSeries.GetOutput(), niiPath=NII_PATH)
-	overlay = Overlay(series[seriesUIDs[2]], niiPath = NII_PATH)
 	
+	mask = LabelMap(dicomSeries.GetOutput(), niiPath=NII_PATH)
+	overlay = Overlay(series[seriesUIDs[2]], niiPath=NII_PATH)
 	slicePaneTL.loadModel(dicomSeries)
 	slicePaneTR.loadModel(mask)
 	slicePaneBL.loadModel(overlay)
