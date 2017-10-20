@@ -7,20 +7,13 @@ import itk
 from Viewer import Viewer, SlicePane
 from Models import DicomSeries, LabelMap, Overlay
 
-# from winson_integration import AINI
-# import zerorpc
-# import numpy as np
+import numpy as np
+import pickle
+from rpc import Rpc
 
-# #############################################################################
-# ## RPC
-# #############################################################################
+rpc = Rpc().get_client()
 
-# config  = {
-#   "rpc": 			"tcp://0.0.0.0:3000",
-#   "storage": 	"/Users/benjaminhon/Developer/Classifier/demo/storage"
-# }
-
-# rpc     = zerorpc.Client(config['rpc'], timeout=3000, heartbeat=None)
+eg_to_ch_pathology = {'bpynz': '表皮样囊肿', 'tsjl':'听神经瘤',  'nml':'脑膜瘤', 'others': '其他'}
 
 #####################################################################################################################
 ## CLASSES
@@ -28,45 +21,45 @@ from Models import DicomSeries, LabelMap, Overlay
 
 class MainWindow(QMainWindow):
 
-	# classificationChanged  = pyqtSignal()
+  classificationChanged  = pyqtSignal()
 
-	def __init__(self, parent=None):
-		super().__init__(parent)
-		centralWidget = QWidget(self)
-		gridlayout = QGridLayout(centralWidget)
-		gridlayout.setContentsMargins(0,0,0,0)
-		gridlayout.setHorizontalSpacing(0)
+  def __init__(self, parent=None):
+    super().__init__(parent)
+    centralWidget = QWidget(self)
+    gridlayout = QGridLayout(centralWidget)
+    gridlayout.setContentsMargins(0,0,0,0)
+    gridlayout.setHorizontalSpacing(0)
 
-		self.setCentralWidget(centralWidget)
-		self.rightPanel = QVBoxLayout()
-		self.leftPanel = QVBoxLayout()
-		self.topPanel = QHBoxLayout()
-		self.bottomPanel = QHBoxLayout()
-		self.centerPanel = QHBoxLayout()
+    self.setCentralWidget(centralWidget)
+    self.rightPanel = QVBoxLayout()
+    self.leftPanel = QVBoxLayout()
+    self.topPanel = QHBoxLayout()
+    self.bottomPanel = QHBoxLayout()
+    self.centerPanel = QHBoxLayout()
 
-		gridlayout.addLayout(self.topPanel, 0, 0, 1, 3)
-		gridlayout.addLayout(self.bottomPanel, 2, 0, 1, 3)
-		gridlayout.addLayout(self.leftPanel, 1, 0, 1, 1)
-		gridlayout.addLayout(self.rightPanel, 1, 2, 1, 1)
-		gridlayout.addLayout(self.centerPanel, 1, 1, 1, 1)
+    gridlayout.addLayout(self.topPanel, 0, 0, 1, 3)
+    gridlayout.addLayout(self.bottomPanel, 2, 0, 1, 3)
+    gridlayout.addLayout(self.leftPanel, 1, 0, 1, 1)
+    gridlayout.addLayout(self.rightPanel, 1, 2, 1, 1)
+    gridlayout.addLayout(self.centerPanel, 1, 1, 1, 1)
 
-		# self._classification = ''
+    self._classification = ''
 
-	# @pyqtProperty(str, notify=classificationChanged)
-	# def classification(self):
-	# 	return self._classification
+  @pyqtProperty(str, notify=classificationChanged)
+  def classification(self):
+    return self._classification
 
-	# @classification.setter
-	# def classification(self, text):
-	# 	self._classification = text
-	# 	self.classificationChanged.emit()
+  @classification.setter
+  def classification(self, text):
+    self._classification = text
+    self.classificationChanged.emit()
 
 def generateSeries(path):
-	generator = itk.GDCMSeriesFileNames.New()
-	generator.SetDirectory(path)
-	seriesUIDs = generator.GetSeriesUIDs()
-	series = { uid: generator.GetFileNames(uid) for uid in generator.GetSeriesUIDs() }
-	return (series, seriesUIDs)
+  generator = itk.GDCMSeriesFileNames.New()
+  generator.SetDirectory(path)
+  seriesUIDs = generator.GetSeriesUIDs()
+  series = { uid: generator.GetFileNames(uid) for uid in generator.GetSeriesUIDs() }
+  return (series, seriesUIDs)
 
 #####################################################################################################################
 ## BEGIN
@@ -89,59 +82,60 @@ viewer.addPane(slicePaneTL, (0,.5,.5,1))
 viewer.addPane(slicePaneTR, (.5,.5,1,1))
 viewer.addPane(slicePaneBL, (0,0,.5,.5))
 
-# # right QML widget
-# component = QQuickView()
-# component.rootContext().setContextProperty("MainWindow", mainWindow)
-# component.setSource(QUrl('panel_eugene.qml'))
-# rightWidget = QWidget.createWindowContainer(component)
-# rightWidget.setMinimumSize(300,200)
+# right QML widget
+component = QQuickView()
+component.rootContext().setContextProperty("MainWindow", mainWindow)
+component.setSource(QUrl('panel_eugene.qml'))
+rightWidget = QWidget.createWindowContainer(component)
+rightWidget.setMinimumSize(300,200)
 
 def load():
-	pass
-	# # DICOM_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259"
-	# path  = QFileDialog().getExistingDirectory()
-	# # generate series
-	# (series, seriesUIDs) = generateSeries(path)
+  try:
+    
+    # get dicom path
+    path  = QFileDialog().getExistingDirectory()
+    # generate series
+    (series, seriesUIDs) = generateSeries(path)
+    # predict and get seriesUID and numpy array
+    results = pickle.loads(rpc.predicting(path), encoding='latin1')
+    # create argmax
+    BACKGROUND = 0.4
+    masks = [ mask for uid, cl, mask in results ]
+    background = np.full(masks[0].shape, BACKGROUND)
+    masks = [ background ] + masks
+    argMax = np.argmax(masks, axis=0).astype(np.uint8)
 
-	# # predict and get nii
-	# NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
+    # create models
+    (uid, classification, mask) = results[0]
 
-	# # # predict and get seriesUID and numpy array
-	# # aini = AINI()
-	# # aini.initModel()
-	# # aini.restoreModel()
-	# # prediction = aini.predictClassification(filepath=path)
+    dicomModel = DicomSeries(series[uid])
+    maskModel = LabelMap(dicomModel.GetOutput(), numpyLabelMap=argMax)
+    overlayModel = Overlay(series[uid], numpyLabelMap=argMax)
 
-	# # masksArr = [ maskInfo['mask'] for maskName, maskInfo in prediction['MASK'].items() ]
-	# # classifications = [ maskInfo['label'] for maskName, maskInfo in prediction['MASK'].items() ]
+    slicePaneTL.loadModel(dicomModel)
+    slicePaneTR.loadModel(maskModel)
+    slicePaneBL.loadModel(overlayModel)
 
-	# # displayClassification = ''
-	# # for m in classifications:
-	# # 	for k, v in m.items():
-	# # 		displayClassification = displayClassification + k + ': ' + str(v) + '\n'
-	# # 	displayClassification = displayClassification + '\n'
+    displayClassification = '\n' + '\n'.join([f"{eg_to_ch_pathology[cl]}:\n {round(li*100)}%\n" for li, cl in classification])
 
-	# # # update classification
-	# # mainWindow.classification = displayClassification
+    mainWindow.classification = displayClassification
+  except Exception as e:
+    print(e)
+    pass
 
-	# # populate slice panes
-	# slicePaneTL.loadDicomNii(series[prediction['UID']])
-	# slicePaneTR.loadDicomNii(series[prediction['UID']], numpyMasks=masksArr)
-	# slicePaneBL.loadDicomNii(series[prediction['UID']], numpyMasks=masksArr)
+# def test():
+#   NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
+#   DICOM_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259"
+#   (series, seriesUIDs) = generateSeries(DICOM_PATH)
+#   dicomSeries = DicomSeries(series[seriesUIDs[2]])
+  
+#   mask = LabelMap(dicomSeries.GetOutput(), niiPath=NII_PATH)
+#   overlay = Overlay(series[seriesUIDs[2]], niiPath=NII_PATH)
+#   slicePaneTL.loadModel(dicomSeries)
+#   slicePaneTR.loadModel(mask)
+#   slicePaneBL.loadModel(overlay)
 
-def test():
-	NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
-	DICOM_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259"
-	(series, seriesUIDs) = generateSeries(DICOM_PATH)
-	dicomSeries = DicomSeries(series[seriesUIDs[2]])
-	
-	mask = LabelMap(dicomSeries.GetOutput(), niiPath=NII_PATH)
-	overlay = Overlay(series[seriesUIDs[2]], niiPath=NII_PATH)
-	slicePaneTL.loadModel(dicomSeries)
-	slicePaneTR.loadModel(mask)
-	slicePaneBL.loadModel(overlay)
-
-test()
+# test()
 
 # menu bar
 fileMenu = QMenu('File')
@@ -154,7 +148,7 @@ mainWindow.show()
 # mainWindow.topPanel.addWidget(topWidget)
 # mainWindow.bottomPanel.addWidget(bottomWidget)
 # mainWindow.leftPanel.addWidget(leftWidget)
-# mainWindow.rightPanel.addWidget(rightWidget)
+mainWindow.rightPanel.addWidget(rightWidget)
 mainWindow.centerPanel.addWidget(viewer)
 
 viewer.startEventLoop()

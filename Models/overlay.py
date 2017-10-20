@@ -21,7 +21,7 @@ class Overlay():
     self.dicomSeries = DicomSeries(dicomFileNames)
     if niiPath:
       self.labelMap = LabelMap(self.dicomSeries.GetOutput(), niiPath=niiPath)
-    elif numpyLabelMap:
+    elif numpyLabelMap.any():
       self.labelMap = LabelMap(self.dicomSeries.GetOutput(), numpyLabelMap=numpyLabelMap)
     self.generatePipeline(self.dicomSeries, self.labelMap)
 
