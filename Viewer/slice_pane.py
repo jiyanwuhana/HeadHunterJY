@@ -8,13 +8,19 @@ from Types import EventType, SliceOrientation, ItkTypes
 
 class SlicePane(Pane):
   
-  def __init__(self, uid, viewer):
+  def __init__(self, uid):
     self.uid = uid
     self.slice = None
+    self.sliceRange = None
     self._orientation = None
     self.imageViewer = vtk.vtkImageViewer2()
-    self.imageViewer.SetRenderWindow(viewer.renderWindow) # don't use the vtkImageViewer2 render window
-    super().__init__(uid, self.imageViewer.GetRenderer(), viewer)
+     # don't use the vtkImageViewer2 render window
+    self.imageViewer.GetRenderWindow().OffScreenRenderingOn()
+    super().__init__(uid, self.imageViewer.GetRenderer())
+
+  def setViewer(self, viewer):
+    self.viewer = viewer
+    self.imageViewer.SetRenderWindow(viewer.renderWindow)
     #################################################################
     ## Viewer Events
     #################################################################
@@ -32,9 +38,9 @@ class SlicePane(Pane):
     observables \
       .filter(lambda ev: ev[0] == EventType.SyncSliceToPane and ev[2].uid != self.uid and ev[2].orientation == self.orientation) \
       .do_action(lambda ev: print(ev)) \
-      .subscribe(lambda ev: self.setSlice(ev[2].slice))
+      .subscribe(lambda ev: self._syncSlice(ev[2].slice, ev[2].sliceRange))
 
-  def loadModel(self, model):
+  def loadModel(self, model, orientation=SliceOrientation.AXIAL):
     # display label maps
     if model.type == ItkTypes.LMLOUL3:
       labelMapToRGBImageFilter = itk.LabelMapToRGBImageFilter[ItkTypes.LMLOUL3, ItkTypes.IRGBUC3].New()
@@ -48,13 +54,14 @@ class SlicePane(Pane):
     # vtk display
     self.imageToVTKImageFilter.Update()
     self.imageViewer.SetInputData(self.imageToVTKImageFilter.GetOutput())
-    self.setupCamera()
-    self.resetSlice()
+    # self.setupCamera()
+    self.orientation=orientation
+    self.sliceRange=(self.imageViewer.GetSliceMin(), self.imageViewer.GetSliceMax())
     return self
 
-  def setupCamera(self):
-    self.renderer.GetActiveCamera().SetViewUp(0, -1, 0) # itk origin is topleft, vtk origin is bottom left
-    self.renderer.ResetCamera()
+  # def setupCamera(self):
+  #   self.renderer.GetActiveCamera().SetViewUp(0, -1, 0) # itk origin is topleft, vtk origin is bottom left
+  #   self.renderer.ResetCamera()
 
   ########################################################
   ## orientation property
@@ -66,12 +73,17 @@ class SlicePane(Pane):
   @orientation.setter
   def orientation(self, sliceOrientation):
     self._orientation = sliceOrientation
-    if sliceOrientation == SliceOrientation.Axial:
+    if sliceOrientation == SliceOrientation.AXIAL:
       self.imageViewer.SetSliceOrientationToXY()
-    elif sliceOrientation == SliceOrientation.Coronal:
+    elif sliceOrientation == SliceOrientation.CORONAL:
       self.imageViewer.SetSliceOrientationToYZ()
-    elif sliceOrientation == SliceOrientation.Sagittal:
+    elif sliceOrientation == SliceOrientation.SAGITTAL:
       self.imageViewer.SetSliceOrientationToXZ()
+    else:
+      raise ValueError("Unknown Orientation specified")
+
+    self.renderer.ResetCamera()
+    self.resetSlice()
 
   ########################################################
   ## slice methods
@@ -82,6 +94,15 @@ class SlicePane(Pane):
     self.maxSlice = self.imageViewer.GetSliceMax()
     self.slice = round((self.minSlice + self.maxSlice) / 2)
     self.imageViewer.SetSlice(self.slice)
+
+  def _syncSlice(self, sliceNumber, sliceRange):
+    self.setSlice(self._normalizeValue(sliceRange[0], sliceRange[1], self.sliceRange[0], self.sliceRange[1], sliceNumber))
+
+  def _normalizeValue(self, currMin, currMax, newMin, newMax, value):
+    normalizedValue = round((float(value)/(currMax-currMin))*(newMax-newMin)+newMin)
+    normalizedValue = max([normalizedValue, newMin])
+    normalizedValue = min([normalizedValue, newMax])
+    return normalizedValue
 
   def setSlice(self, slice):
     self.slice = slice

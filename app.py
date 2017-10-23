@@ -1,4 +1,6 @@
 import sys
+import os
+
 from PyQt5.QtCore import Qt, QUrl, pyqtSlot, pyqtProperty, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QMenuBar, QMenu, QFileDialog
 from PyQt5.QtQuick import QQuickView
@@ -6,6 +8,7 @@ import vtk
 import itk
 from Viewer import Viewer, SlicePane
 from Models import DicomSeries, LabelMap, Overlay
+from Types import SliceOrientation
 from EventManagers import PanesSyncEventManager
 
 import numpy as np
@@ -74,9 +77,9 @@ viewer.setMinimumWidth(1000)
 viewer.setMinimumHeight(800)
 
 # slice panes
-slicePaneTL = SlicePane('TL', viewer)
-slicePaneTR = SlicePane('TR', viewer)
-slicePaneBL = SlicePane('BL', viewer)
+slicePaneTL = SlicePane('TL')
+slicePaneTR = SlicePane('TR')
+slicePaneBL = SlicePane('BL')
 
 # add panes
 viewer.addPane(slicePaneTL, (0,.5,.5,1))
@@ -123,7 +126,7 @@ def load():
 
     slicePaneTL.loadModel(dicomModel)
     slicePaneTR.loadModel(maskModel)
-    slicePaneBL.loadModel(overlayModel)
+    # slicePaneBL.loadModel(overlayModel)
 
     displayClassification = '\n' + '\n'.join([f"{eg_to_ch_pathology[cl]}:\n {round(li*100)}%\n" for li, cl in classification])
 
@@ -134,16 +137,16 @@ def load():
     pass
 
 def test():
-  NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
-  DICOM_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259"
+  NII_PATH = os.path.join(os.getcwd(), 'notebooks/220259.nii')
+  DICOM_PATH = os.path.join(os.getcwd(), 'notebooks/220259')
   (series, seriesUIDs) = generateSeries(DICOM_PATH)
   dicomSeries = DicomSeries(series[seriesUIDs[2]])
   
   mask = LabelMap(dicomSeries.GetOutput(), niiPath=NII_PATH)
   overlay = Overlay(series[seriesUIDs[2]], niiPath=NII_PATH)
-  slicePaneTL.loadModel(dicomSeries)
-  slicePaneTR.loadModel(mask)
-  slicePaneBL.loadModel(overlay)
+  slicePaneTL.loadModel(dicomSeries, SliceOrientation.AXIAL)
+  slicePaneTR.loadModel(mask, SliceOrientation.AXIAL)
+  slicePaneBL.loadModel(overlay, SliceOrientation.CORONAL)
 
 test()
 

@@ -8,9 +8,9 @@ class ItkTypes():
 	LMLOUL3     = itk.LabelMap[itk.StatisticsLabelObject[itk.UL, 3]]
 
 class SliceOrientation(Enum):
-  Axial     = 1
-  Sagittal  = 2
-  Coronal   = 3
+  AXIAL     = 1
+  SAGITTAL  = 2
+  CORONAL   = 3
 
 class EventType(Enum):
 	SliceWillChange = 1
