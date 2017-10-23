@@ -40,7 +40,7 @@ class SlicePane(Pane):
       .do_action(lambda ev: print(ev)) \
       .subscribe(lambda ev: self._syncSlice(ev[2].slice, ev[2].sliceRange))
 
-  def loadModel(self, model, orientation):
+  def loadModel(self, model, orientation=SliceOrientation.AXIAL):
     # display label maps
     if model.type == ItkTypes.LMLOUL3:
       labelMapToRGBImageFilter = itk.LabelMapToRGBImageFilter[ItkTypes.LMLOUL3, ItkTypes.IRGBUC3].New()
@@ -80,7 +80,8 @@ class SlicePane(Pane):
     elif sliceOrientation == SliceOrientation.SAGITTAL:
       self.imageViewer.SetSliceOrientationToXZ()
     else:
-      self.imageViewer.SetSliceOrientationToXY() #default
+      raise ValueError("Unknown Orientation specified")
+
     self.renderer.ResetCamera()
     self.resetSlice()
 
