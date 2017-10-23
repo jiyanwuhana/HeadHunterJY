@@ -10,17 +10,14 @@ from Types import ItkTypes
 
 class Overlay():
   
-  def __init__(self, dicomFileNames, niiPath=None, numpyLabelMap=None, maskOpacity=0.5):
-    self.type = ItkTypes.IRGBUC3
+  def __init__(self, dicomFileNames, niiPath=None, ndarr=np.array([]), maskOpacity=0.5):
+    self.type           = ItkTypes.IRGBUC3
     self.dicomFileNames = dicomFileNames
-    self.niiPath = niiPath
-    self.numpyLabelMap = numpyLabelMap
-    self.maskOpacity = maskOpacity
-    self.dicomSeries = DicomSeries(dicomFileNames)
-    if niiPath:
-      self.labelMap = LabelMap(self.dicomSeries.GetOutput(), niiPath=niiPath)
-    elif numpyLabelMap.any():
-      self.labelMap = LabelMap(self.dicomSeries.GetOutput(), numpyLabelMap=numpyLabelMap)
+    self.niiPath        = niiPath
+    self.ndarr          = ndarr
+    self.maskOpacity    = maskOpacity
+    self.dicomSeries    = DicomSeries(dicomFileNames)
+    self.labelMap       = LabelMap(self.dicomSeries.GetOutput(), niiPath=niiPath, ndarr=ndarr)
     self.generatePipeline(self.dicomSeries, self.labelMap)
 
   def generatePipeline(self, dicomSeries, labelMap):

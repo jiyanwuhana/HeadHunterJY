@@ -94,7 +94,6 @@ slicePaneTL.subscribeTo(paneSyncEventManager)
 slicePaneTR.subscribeTo(paneSyncEventManager)
 slicePaneBL.subscribeTo(paneSyncEventManager)
 
-
 # # right QML widget
 # component = QQuickView()
 # component.rootContext().setContextProperty("MainWindow", mainWindow)
@@ -122,7 +121,7 @@ def load():
     (uid, classification, mask) = results[0]
 
     dicomModel = DicomSeries(series[uid])
-    maskModel = LabelMap(dicomModel.GetOutput(), numpyLabelMap=argMax)
+    maskModel = LabelMap(dicomModel.GetOutput(), ndarr=argMax)
     overlayModel = Overlay(series[uid], numpyLabelMap=argMax)
 
     slicePaneTL.loadModel(dicomModel)
