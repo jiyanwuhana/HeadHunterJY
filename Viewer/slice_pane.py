@@ -71,11 +71,11 @@ class SlicePane(Pane):
   @orientation.setter
   def orientation(self, sliceOrientation):
     self._orientation = sliceOrientation
-    if sliceOrientation == SliceOrientation.Axial:
+    if sliceOrientation == SliceOrientation.AXIAL:
       self.imageViewer.SetSliceOrientationToXY()
-    elif sliceOrientation == SliceOrientation.Coronal:
+    elif sliceOrientation == SliceOrientation.CORONAL:
       self.imageViewer.SetSliceOrientationToYZ()
-    elif sliceOrientation == SliceOrientation.Sagittal:
+    elif sliceOrientation == SliceOrientation.SAGITTAL:
       self.imageViewer.SetSliceOrientationToXZ()
 
   ########################################################
