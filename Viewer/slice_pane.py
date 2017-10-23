@@ -8,13 +8,18 @@ from Types import EventType, SliceOrientation, ItkTypes
 
 class SlicePane(Pane):
   
-  def __init__(self, uid, viewer):
+  def __init__(self, uid):
     self.uid = uid
     self.slice = None
     self._orientation = None
     self.imageViewer = vtk.vtkImageViewer2()
-    self.imageViewer.SetRenderWindow(viewer.renderWindow) # don't use the vtkImageViewer2 render window
-    super().__init__(uid, self.imageViewer.GetRenderer(), viewer)
+     # don't use the vtkImageViewer2 render window
+    self.imageViewer.GetRenderWindow().OffScreenRenderingOn()
+    super().__init__(uid, self.imageViewer.GetRenderer())
+
+  def setViewer(self, viewer):
+    self.viewer = viewer
+    self.imageViewer.SetRenderWindow(viewer.renderWindow)
     #################################################################
     ## Viewer Events
     #################################################################

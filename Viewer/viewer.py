@@ -39,7 +39,8 @@ class Viewer(QVTKRenderWindowInteractor):
       
   def addPane(self, pane, viewPort):
     self.panes[pane.uid] = (pane, viewPort)
-    pane.renderer.SetViewport(viewPort)
+    pane.setViewer(self)
+    pane.setViewport(viewPort)
 
   def setHoveredPane(self, uid):
     self.hoveredPane = uid

@@ -76,9 +76,9 @@ viewer.setMinimumWidth(1000)
 viewer.setMinimumHeight(800)
 
 # slice panes
-slicePaneTL = SlicePane('TL', viewer)
-slicePaneTR = SlicePane('TR', viewer)
-slicePaneBL = SlicePane('BL', viewer)
+slicePaneTL = SlicePane('TL')
+slicePaneTR = SlicePane('TR')
+slicePaneBL = SlicePane('BL')
 
 # add panes
 viewer.addPane(slicePaneTL, (0,.5,.5,1))
