@@ -1,4 +1,6 @@
 import sys
+import os
+
 from PyQt5.QtCore import Qt, QUrl, pyqtSlot, pyqtProperty, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QMenuBar, QMenu, QFileDialog
 from PyQt5.QtQuick import QQuickView
@@ -124,7 +126,7 @@ def load():
 
     slicePaneTL.loadModel(dicomModel)
     slicePaneTR.loadModel(maskModel)
-    slicePaneBL.loadModel(overlayModel)
+    # slicePaneBL.loadModel(overlayModel)
 
     displayClassification = '\n' + '\n'.join([f"{eg_to_ch_pathology[cl]}:\n {round(li*100)}%\n" for li, cl in classification])
 
@@ -135,8 +137,8 @@ def load():
     pass
 
 def test():
-  NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
-  DICOM_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259"
+  NII_PATH = os.path.join(os.getcwd(), 'notebooks/220259.nii')
+  DICOM_PATH = os.path.join(os.getcwd(), 'notebooks/220259')
   (series, seriesUIDs) = generateSeries(DICOM_PATH)
   dicomSeries = DicomSeries(series[seriesUIDs[2]])
   
