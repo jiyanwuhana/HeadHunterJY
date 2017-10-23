@@ -84,13 +84,12 @@ viewer.addPane(slicePaneTR, (.5,.5,1,1))
 viewer.addPane(slicePaneBL, (0,0,.5,.5))
 
 # event manager
-paneSyncEventManager = PanesSyncEventManager(viewer.panes, sync=True)
+paneSyncEventManager = PanesSyncEventManager(viewer.panes, sync=False)
 
 # subscribe to event managers
 slicePaneTL.subscribeTo(paneSyncEventManager)
 slicePaneTR.subscribeTo(paneSyncEventManager)
 slicePaneBL.subscribeTo(paneSyncEventManager)
-
 
 # # right QML widget
 # component = QQuickView()
