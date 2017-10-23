@@ -84,7 +84,7 @@ viewer.addPane(slicePaneTR, (.5,.5,1,1))
 viewer.addPane(slicePaneBL, (0,0,.5,.5))
 
 # event manager
-paneSyncEventManager = PanesSyncEventManager(viewer.panes, sync=False)
+paneSyncEventManager = PanesSyncEventManager(viewer.panes, sync=True)
 
 # subscribe to event managers
 slicePaneTL.subscribeTo(paneSyncEventManager)
@@ -118,7 +118,7 @@ def load():
     (uid, classification, mask) = results[0]
 
     dicomModel = DicomSeries(series[uid])
-    maskModel = LabelMap(dicomModel.GetOutput(), numpyLabelMap=argMax)
+    maskModel = LabelMap(dicomModel.GetOutput(), ndarr=argMax)
     overlayModel = Overlay(series[uid], numpyLabelMap=argMax)
 
     slicePaneTL.loadModel(dicomModel)
