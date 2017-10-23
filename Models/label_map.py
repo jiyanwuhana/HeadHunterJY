@@ -8,19 +8,21 @@ from .data_source import DataSource
 
 class LabelMap():
   
-  def __init__(self, referenceImage, niiPath=None, ndarr=np.array([])):
+  def __init__(self, referenceImage, itkImage=None, niiPath=None, ndarr=np.array([])):
     self.niiPath        = niiPath
     self.ndarr          = ndarr
     self.type           = ItkTypes.LMLOUL3
     self.referenceImage = referenceImage
-    if niiPath:
+    if itkImage:
+      self.image = itkImage
+    elif niiPath:
       self.image = DataSource().loadNii(niiPath)
     elif ndarr.any():
       self.image = DataSource().loadNumpy(ndarr, referenceImage)
     self.generatePipeline(referenceImage)
 
   def generatePipeline(self, referenceImage):
-    # itk.ResampleImageFilter -> itk.LabelImageToLabelMapFilter -> itk.LabelMapOverlayImageFilter
+    # itk.ResampleImageFilter -> itk.LabelImageToLabelMapFilter
     resampleImageFilter = itk.ResampleImageFilter[ItkTypes.IUC3, ItkTypes.IUC3].New()
     resampleImageFilter.SetInput(self.image.GetOutput())
     resampleImageFilter.SetTransform(itk.IdentityTransform[itk.D, 3].New())

@@ -14,8 +14,7 @@ class DicomSeries():
     self.generatePipeline(fileNames)
 
   def generatePipeline(self, fileNames):
-    # RescaleIntensityImageFilter -> CastImageFilter -> 
-    # itk.ImageToVTKImageFilter -> vtkImageViewer2
+    # RescaleIntensityImageFilter -> CastImageFilter -> itk.ImageToVTKImageFilter -> vtkImageViewer2
     rescaler = itk.RescaleIntensityImageFilter[ItkTypes.IF3, ItkTypes.IF3].New()
     rescaler.SetInput(self.image.GetOutput())
     rescaler.SetOutputMaximum(255)
