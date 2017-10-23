@@ -39,7 +39,7 @@ class SlicePane(Pane):
       .do_action(lambda ev: print(ev)) \
       .subscribe(lambda ev: self.setSlice(ev[2].slice))
 
-  def loadModel(self, model):
+  def loadModel(self, model, orientation):
     # display label maps
     if model.type == ItkTypes.LMLOUL3:
       labelMapToRGBImageFilter = itk.LabelMapToRGBImageFilter[ItkTypes.LMLOUL3, ItkTypes.IRGBUC3].New()
@@ -53,13 +53,13 @@ class SlicePane(Pane):
     # vtk display
     self.imageToVTKImageFilter.Update()
     self.imageViewer.SetInputData(self.imageToVTKImageFilter.GetOutput())
-    self.setupCamera()
-    self.resetSlice()
+    # self.setupCamera()
+    self.orientation=orientation
     return self
 
-  def setupCamera(self):
-    self.renderer.GetActiveCamera().SetViewUp(0, -1, 0) # itk origin is topleft, vtk origin is bottom left
-    self.renderer.ResetCamera()
+  # def setupCamera(self):
+  #   self.renderer.GetActiveCamera().SetViewUp(0, -1, 0) # itk origin is topleft, vtk origin is bottom left
+  #   self.renderer.ResetCamera()
 
   ########################################################
   ## orientation property
@@ -77,6 +77,10 @@ class SlicePane(Pane):
       self.imageViewer.SetSliceOrientationToYZ()
     elif sliceOrientation == SliceOrientation.SAGITTAL:
       self.imageViewer.SetSliceOrientationToXZ()
+    else:
+      self.imageViewer.SetSliceOrientationToXY() #default
+    self.renderer.ResetCamera()
+    self.resetSlice()
 
   ########################################################
   ## slice methods

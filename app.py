@@ -8,6 +8,7 @@ import vtk
 import itk
 from Viewer import Viewer, SlicePane
 from Models import DicomSeries, LabelMap, Overlay
+from Types import SliceOrientation
 from EventManagers import PanesSyncEventManager
 
 import numpy as np
@@ -144,9 +145,9 @@ def test():
   
   mask = LabelMap(dicomSeries.GetOutput(), niiPath=NII_PATH)
   overlay = Overlay(series[seriesUIDs[2]], niiPath=NII_PATH)
-  slicePaneTL.loadModel(dicomSeries)
-  slicePaneTR.loadModel(mask)
-  slicePaneBL.loadModel(overlay)
+  slicePaneTL.loadModel(dicomSeries, SliceOrientation.AXIAL)
+  slicePaneTR.loadModel(mask, SliceOrientation.AXIAL)
+  slicePaneBL.loadModel(overlay, SliceOrientation.CORONAL)
 
 test()
 
