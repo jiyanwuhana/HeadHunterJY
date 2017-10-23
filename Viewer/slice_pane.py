@@ -11,6 +11,7 @@ class SlicePane(Pane):
   def __init__(self, uid):
     self.uid = uid
     self.slice = None
+    self.sliceRange = None
     self._orientation = None
     self.imageViewer = vtk.vtkImageViewer2()
      # don't use the vtkImageViewer2 render window
@@ -37,7 +38,7 @@ class SlicePane(Pane):
     observables \
       .filter(lambda ev: ev[0] == EventType.SyncSliceToPane and ev[2].uid != self.uid and ev[2].orientation == self.orientation) \
       .do_action(lambda ev: print(ev)) \
-      .subscribe(lambda ev: self.setSlice(ev[2].slice))
+      .subscribe(lambda ev: self._syncSlice(ev[2].slice, ev[2].sliceRange))
 
   def loadModel(self, model, orientation):
     # display label maps
@@ -55,6 +56,7 @@ class SlicePane(Pane):
     self.imageViewer.SetInputData(self.imageToVTKImageFilter.GetOutput())
     # self.setupCamera()
     self.orientation=orientation
+    self.sliceRange=(self.imageViewer.GetSliceMin(), self.imageViewer.GetSliceMax())
     return self
 
   # def setupCamera(self):
@@ -91,6 +93,15 @@ class SlicePane(Pane):
     self.maxSlice = self.imageViewer.GetSliceMax()
     self.slice = round((self.minSlice + self.maxSlice) / 2)
     self.imageViewer.SetSlice(self.slice)
+
+  def _syncSlice(self, sliceNumber, sliceRange):
+    self.setSlice(self._normalizeValue(sliceRange[0], sliceRange[1], self.sliceRange[0], self.sliceRange[1], sliceNumber))
+
+  def _normalizeValue(self, currMin, currMax, newMin, newMax, value):
+    normalizedValue = round((float(value)/(currMax-currMin))*(newMax-newMin)+newMin)
+    normalizedValue = max([normalizedValue, newMin])
+    normalizedValue = min([normalizedValue, newMax])
+    return normalizedValue
 
   def setSlice(self, slice):
     self.slice = slice
