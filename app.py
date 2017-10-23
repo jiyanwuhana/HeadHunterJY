@@ -6,6 +6,7 @@ import vtk
 import itk
 from Viewer import Viewer, SlicePane
 from Models import DicomSeries, LabelMap, Overlay
+from EventManagers import PanesSyncEventManager
 
 import numpy as np
 import pickle
@@ -73,21 +74,30 @@ viewer.setMinimumWidth(1000)
 viewer.setMinimumHeight(800)
 
 # slice panes
-slicePaneTL = SlicePane('TL', viewer, sync=True)
-slicePaneTR = SlicePane('TR', viewer, sync=True)
-slicePaneBL = SlicePane('BL', viewer, sync=True)
+slicePaneTL = SlicePane('TL', viewer)
+slicePaneTR = SlicePane('TR', viewer)
+slicePaneBL = SlicePane('BL', viewer)
 
 # add panes
 viewer.addPane(slicePaneTL, (0,.5,.5,1))
 viewer.addPane(slicePaneTR, (.5,.5,1,1))
 viewer.addPane(slicePaneBL, (0,0,.5,.5))
 
-# right QML widget
-component = QQuickView()
-component.rootContext().setContextProperty("MainWindow", mainWindow)
-component.setSource(QUrl('panel_eugene.qml'))
-rightWidget = QWidget.createWindowContainer(component)
-rightWidget.setMinimumSize(300,200)
+# event manager
+paneSyncEventManager = PanesSyncEventManager(viewer.panes, sync=True)
+
+# subscribe to event managers
+slicePaneTL.subscribeTo(paneSyncEventManager)
+slicePaneTR.subscribeTo(paneSyncEventManager)
+slicePaneBL.subscribeTo(paneSyncEventManager)
+
+
+# # right QML widget
+# component = QQuickView()
+# component.rootContext().setContextProperty("MainWindow", mainWindow)
+# component.setSource(QUrl('panel_eugene.qml'))
+# rightWidget = QWidget.createWindowContainer(component)
+# rightWidget.setMinimumSize(300,200)
 
 def load():
   try:
@@ -119,23 +129,24 @@ def load():
     displayClassification = '\n' + '\n'.join([f"{eg_to_ch_pathology[cl]}:\n {round(li*100)}%\n" for li, cl in classification])
 
     mainWindow.classification = displayClassification
+    
   except Exception as e:
     print(e)
     pass
 
-# def test():
-#   NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
-#   DICOM_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259"
-#   (series, seriesUIDs) = generateSeries(DICOM_PATH)
-#   dicomSeries = DicomSeries(series[seriesUIDs[2]])
+def test():
+  NII_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259.nii"
+  DICOM_PATH = "/Users/benjaminhon/Developer/HeadHunter/notebooks/220259"
+  (series, seriesUIDs) = generateSeries(DICOM_PATH)
+  dicomSeries = DicomSeries(series[seriesUIDs[2]])
   
-#   mask = LabelMap(dicomSeries.GetOutput(), niiPath=NII_PATH)
-#   overlay = Overlay(series[seriesUIDs[2]], niiPath=NII_PATH)
-#   slicePaneTL.loadModel(dicomSeries)
-#   slicePaneTR.loadModel(mask)
-#   slicePaneBL.loadModel(overlay)
+  mask = LabelMap(dicomSeries.GetOutput(), niiPath=NII_PATH)
+  overlay = Overlay(series[seriesUIDs[2]], niiPath=NII_PATH)
+  slicePaneTL.loadModel(dicomSeries)
+  slicePaneTR.loadModel(mask)
+  slicePaneBL.loadModel(overlay)
 
-# test()
+test()
 
 # menu bar
 fileMenu = QMenu('File')
@@ -148,7 +159,7 @@ mainWindow.show()
 # mainWindow.topPanel.addWidget(topWidget)
 # mainWindow.bottomPanel.addWidget(bottomWidget)
 # mainWindow.leftPanel.addWidget(leftWidget)
-mainWindow.rightPanel.addWidget(rightWidget)
+# mainWindow.rightPanel.addWidget(rightWidget)
 mainWindow.centerPanel.addWidget(viewer)
 
 viewer.startEventLoop()

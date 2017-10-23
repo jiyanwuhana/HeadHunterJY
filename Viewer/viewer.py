@@ -20,7 +20,7 @@ class Viewer(QVTKRenderWindowInteractor):
     self.interactor = self.renderWindow.GetInteractor()
     self.events = ViewerInteractorStyle(self)
     self.interactor.SetInteractorStyle(self.events)
-
+    
     ########################
     ## viewer level events
     ########################
