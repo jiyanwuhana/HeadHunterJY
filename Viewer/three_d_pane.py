@@ -8,6 +8,10 @@ class ThreeDPane(Pane):
         self.motionFactor = 10.0  
         self.mouseWheelMotionFactor = 0.2
 
+    #################################################################
+    ## Camera Events
+    #################################################################    
+
     def _pan(self, previousEventPosition, currentEventPosition):
         renderer = self.renderer
         camera = renderer.GetActiveCamera()
@@ -66,6 +70,10 @@ class ThreeDPane(Pane):
           renderer.ResetCameraClippingRange()
           renderer.UpdateLightsGeometryToFollowCamera()
         self.renderer.Render()
+
+    #################################################################
+    ## Utility Methods
+    #################################################################
 
     def _computeWorldToDisplay(self, value):
         coord = vtk.vtkCoordinate()
