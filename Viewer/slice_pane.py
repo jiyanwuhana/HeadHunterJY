@@ -42,26 +42,12 @@ class SlicePane(Pane):
 
   def loadModel(self, model, orientation=SliceOrientation.AXIAL):
     # display label maps
-    if model.type == ItkTypes.LMLOUL3:
-      labelMapToRGBImageFilter = itk.LabelMapToRGBImageFilter[ItkTypes.LMLOUL3, ItkTypes.IRGBUC3].New()
-      labelMapToRGBImageFilter.SetInput(model.GetOutput())
-      self.imageToVTKImageFilter = itk.ImageToVTKImageFilter[ItkTypes.IRGBUC3].New()
-      self.imageToVTKImageFilter.SetInput(labelMapToRGBImageFilter.GetOutput())
-    # display scalar images or overlay
-    else:
-      self.imageToVTKImageFilter = itk.ImageToVTKImageFilter[model.type].New()
-      self.imageToVTKImageFilter.SetInput(model.GetOutput())
-    # vtk display
-    self.imageToVTKImageFilter.Update()
-    self.imageViewer.SetInputData(self.imageToVTKImageFilter.GetOutput())
-    # self.setupCamera()
+    vtkImageData = self.__makeVtkImageData(model)
+    self.imageViewer.SetInputData(vtkImageData)
     self.orientation=orientation
     self.sliceRange=(self.imageViewer.GetSliceMin(), self.imageViewer.GetSliceMax())
+    self._updatePicker()
     return self
-
-  # def setupCamera(self):
-  #   self.renderer.GetActiveCamera().SetViewUp(0, -1, 0) # itk origin is topleft, vtk origin is bottom left
-  #   self.renderer.ResetCamera()
 
   ########################################################
   ## orientation property
