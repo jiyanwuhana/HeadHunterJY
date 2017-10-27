@@ -9,14 +9,14 @@ def makeNdistinctColors(n): #TODO improve performance via packing
 	if n==1:
 		return tuple(colors)
 	for i in range(2,n):
-		colors.append(_findFurthestPointInSpaceFromGivenSet(colors, cielabSpacePoints))
+		colors.append(_findPointInSpaceFurthestFromGivenSet(colors, cielabSpacePoints))
 	return colors
 
-def findFurthestPointInCIELAB(setOfPoints):
+def findPointInCIELABSpaceFurthestFromGivenSet(setOfPoints):
 	cielabSpacePoints = _makeCIELABSearchSpace()
-	return _findFurthestPointInSpaceFromGivenSet(setOfPoints, cielabSpacePoints)
+	return _findPointInSpaceFurthestFromGivenSet(setOfPoints, cielabSpacePoints)
 
-def _findFurthestPointInSpaceFromGivenSet(setOfPoints, searchSpacePoints):
+def _findPointInSpaceFurthestFromGivenSet(setOfPoints, searchSpacePoints):
 	currDistance = 0
 	furthestPoint=None
 	for point in searchSpacePoints: #TODO vectorize further
