@@ -31,17 +31,3 @@ class ThreeDPane(Pane):
         renderer.ResetCameraClippingRange()
         renderer.UpdateLightsGeometryToFollowCamera()
         self._rerender()
-
-    #protected method
-    def spin(self, previousEventPosition, currentEventPosition):
-        renderer = self.renderer
-        center = renderer.GetCenter()
-        newVector = (currentEventPosition[1]-center[1], currentEventPosition[0]-center[0]) #
-        oldVector = (previousEventPosition[1]-center[1], previousEventPosition[0]-center[0])
-        newAngle = vtk.vtkMath.DegreesFromRadians(atan2(newVector))
-        oldAngle = vtk.vtkMath.DegreesFromRadians(atan2(oldVector))
-
-        camera = renderer.GetActiveCamera()
-        camera.Roll(newAngle-oldAngle)
-        camera.OrthogonalizeViewUp()
-        self._rerender()
