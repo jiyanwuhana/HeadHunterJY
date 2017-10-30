@@ -22,14 +22,15 @@ class Pane(Subject):
   ## Camera Methods
   #################################################################
 
-  def _pan(self, previousEventPosition, currentEventPosition):
+  #protected method
+  def pan(self, previousEventPosition, currentEventPosition):
     renderer = self.renderer
     camera = renderer.GetActiveCamera()
     viewFocus = camera.GetFocalPoint()
     viewPoint = camera.GetPosition()
     focalDepth = viewFocus[2]
-    newPickPoint =  _computeWorldToDisplay(renderer, (currentEventPosition[0],currentEventPosition[1],focalDepth))
-    oldPickPoint = _computeWorldToDisplay(renderer, (previousEventPosition[0],previousEventPosition[1],focalDepth))
+    newPickPoint =  self._computeWorldToDisplay(renderer, (currentEventPosition[0],currentEventPosition[1],focalDepth))
+    oldPickPoint = self._computeWorldToDisplay(renderer, (previousEventPosition[0],previousEventPosition[1],focalDepth))
     motionVector = [(pos[0]-pos[1]) for pos in slice(oldPickPoint, newPickPoint)]
     
     newFocalPoint = [(pos[0]+pos[1]) for pos in slice(motionVector, viewFocus)]
@@ -40,7 +41,8 @@ class Pane(Subject):
     renderer.UpdateLightsGeometryToFollowCamera()
     self._rerender()
 
-  def _dolly(self, dolly_value): 
+  #protected method
+  def dolly(self, dolly_value): 
     renderer=self.renderer
     camera = renderer.GetActiveCamera()
     if camera.GetParallelProjection():
@@ -50,6 +52,16 @@ class Pane(Subject):
       renderer.ResetCameraClippingRange()
       renderer.UpdateLightsGeometryToFollowCamera()
     self._rerender()
+
+  #################################################################
+  ## Utility Methods
+  #################################################################
+
+  def _computeWorldToDisplay(self, value):
+      coord = vtk.vtkCoordinate()
+      coord.SetCoordinateSystemToWorld()
+      coord.SetValue(value)
+      return coord.GetComputeDisplayValue(self.renderer) 
 
   def _rerender(self):
     self.renderer.GetRenderWindow().GetInteractor().Render()

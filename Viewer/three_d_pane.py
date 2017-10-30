@@ -12,7 +12,8 @@ class ThreeDPane(Pane):
     ## Camera Methods
     #################################################################    
 
-    def _rotate(self, previousEventPosition, currentEventPosition):
+    #protected method
+    def rotate(self, previousEventPosition, currentEventPosition):
         renderer = self.renderer
         translationVector = (currentEventPosition[0]-previousEventPosition[0], currentEventPosition[1]-previousEventPosition[1])
         size = renderer.GetRenderWindow().GetSize()
@@ -31,7 +32,8 @@ class ThreeDPane(Pane):
         renderer.UpdateLightsGeometryToFollowCamera()
         self._rerender()
 
-    def _spin(self, previousEventPosition, currentEventPosition):
+    #protected method
+    def spin(self, previousEventPosition, currentEventPosition):
         renderer = self.renderer
         center = renderer.GetCenter()
         newVector = (currentEventPosition[1]-center[1], currentEventPosition[0]-center[0]) #
@@ -43,13 +45,3 @@ class ThreeDPane(Pane):
         camera.Roll(newAngle-oldAngle)
         camera.OrthogonalizeViewUp()
         self._rerender()
-
-    #################################################################
-    ## Utility Methods
-    #################################################################
-
-    def _computeWorldToDisplay(self, value):
-        coord = vtk.vtkCoordinate()
-        coord.SetCoordinateSystemToWorld()
-        coord.SetValue(value)
-        return coord.GetComputeDisplayValue(self.renderer) 
