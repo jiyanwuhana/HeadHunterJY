@@ -28,6 +28,7 @@ class ThreeDPane(Pane):
         camera.SetPosition(newPosition)
 
         renderer.UpdateLightsGeometryToFollowCamera()
+        self._rerender()
 
     def _rotate(self, previousEventPosition, currentEventPosition):
         renderer = self.renderer
@@ -46,7 +47,7 @@ class ThreeDPane(Pane):
 
         renderer.ResetCameraClippingRange()
         renderer.UpdateLightsGeometryToFollowCamera()
-        self.renderer.Render()
+        self._rerender()
 
     def _spin(self, previousEventPosition, currentEventPosition):
         renderer = self.renderer
@@ -59,6 +60,7 @@ class ThreeDPane(Pane):
         camera = renderer.GetActiveCamera()
         camera.Roll(newAngle-oldAngle)
         camera.OrthogonalizeViewUp()
+        self._rerender()
 
     def _dolly(self, dolly_value): #right click dolly
         renderer=self.renderer
@@ -69,7 +71,7 @@ class ThreeDPane(Pane):
           camera.Dolly(dolly_value)
           renderer.ResetCameraClippingRange()
           renderer.UpdateLightsGeometryToFollowCamera()
-        self.renderer.Render()
+        self._rerender()
 
     #################################################################
     ## Utility Methods
@@ -80,3 +82,6 @@ class ThreeDPane(Pane):
         coord.SetCoordinateSystemToWorld()
         coord.SetValue(value)
         return coord.GetComputeDisplayValue(self.renderer) 
+
+    def _rerender(self):
+        self.renderer.GetRenderWindow().GetInteractor().Render()
