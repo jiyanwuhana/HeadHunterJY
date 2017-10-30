@@ -18,7 +18,7 @@ class Pane(Subject):
     if self.viewer and self.renderer:
       self.renderer.SetViewport(viewPort)
 
-  def _makeVtkImageData(self, model):
+  def makeVtkImageData(self, model):
     # display label maps
     if model.type == ItkTypes.LMLOUL3:
       labelMapToRGBImageFilter = itk.LabelMapToRGBImageFilter[ItkTypes.LMLOUL3, ItkTypes.IRGBUC3].New()
