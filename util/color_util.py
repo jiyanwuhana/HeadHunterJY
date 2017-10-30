@@ -2,25 +2,26 @@ import numpy as np
 from skimage import color
 
 def makeNdistinctColors(n): #TODO improve performance via packing
-	cielabSpacePoints = _makeCIELABSearchSpace()
+	searchSpace = _makeCIELABSearchSpace()
 	if n==0:
 		return None
 	colors = [(0,0,128)]
 	if n==1:
 		return tuple(colors)
 	for i in range(2,n):
-		colors.append(_findPointInSpaceFurthestFromGivenSet(colors, cielabSpacePoints))
+		colors.append(_findPointInSpaceFurthestFromGivenSet(setOfPoints=colors, searchSpacePoints=searchSpace))
 	return colors
 
 def findPointInCIELABSpaceFurthestFromGivenSet(setOfPoints):
-	cielabSpacePoints = _makeCIELABSearchSpace()
-	return _findPointInSpaceFurthestFromGivenSet(setOfPoints, cielabSpacePoints)
+	searchSpace = _makeCIELABSearchSpace()
+	return _findPointInSpaceFurthestFromGivenSet(setOfPoints, searchSpace)
 
 def _findPointInSpaceFurthestFromGivenSet(setOfPoints, searchSpacePoints):
+	#"Furthest" is defined as the here is the maximum possible distance between the new point and the nearest current neighbour
 	currDistance = 0
 	furthestPoint=None
 	for point in searchSpacePoints: #TODO vectorize further
-		newDistance = _findMinDistance(setOfPoints, point)
+		newDistance = _findMinimumDistanceFromPointToSetOfPoints(setOfPoints, point)
 		if newDistance > currDistance:
 			currDistance=newDistance
 			furthestPoint=point
@@ -43,8 +44,8 @@ def _RGBtoCIELAB(point):
 	cielabPoint = color.rgb2lab(point)
 	return cielabPoint[0][0]		
 
-def _findMinDistance(setOfPoints, possiblePoint):
-	matrix = np.subtract(setOfPoints, possiblePoint)
+def _findMinimumDistanceFromPointToSetOfPoints(setOfPoints, point):
+	matrix = np.subtract(setOfPoints, point)
 	oneNormVector = np.sum(np.abs(matrix)**2,axis=-1)**(1./2)
 	minIndex = np.argmin(oneNormVector)
 	minDistance = oneNormVector[minIndex]
