@@ -46,7 +46,6 @@ class SlicePane(Pane):
     self.imageViewer.SetInputData(vtkImageData)
     self.orientation=orientation
     self.sliceRange=(self.imageViewer.GetSliceMin(), self.imageViewer.GetSliceMax())
-    self._updatePicker()
     return self
 
   ########################################################
