@@ -30,4 +30,5 @@ class Pane(Subject):
       self.imageToVTKImageFilter = itk.ImageToVTKImageFilter[model.type].New()
       self.imageToVTKImageFilter.SetInput(model.GetOutput())
     # vtk display
+    self.imageToVTKImageFilter.Update()
     return self.imageToVTKImageFilter.GetOutput()
