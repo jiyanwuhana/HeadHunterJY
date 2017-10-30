@@ -9,26 +9,8 @@ class ThreeDPane(Pane):
         self.mouseWheelMotionFactor = 0.2
 
     #################################################################
-    ## Camera Events
+    ## Camera Methods
     #################################################################    
-
-    def _pan(self, previousEventPosition, currentEventPosition):
-        renderer = self.renderer
-        camera = renderer.GetActiveCamera()
-        viewFocus = camera.GetFocalPoint()
-        viewPoint = camera.GetPosition()
-        focalDepth = viewFocus[2]
-        newPickPoint =  _computeWorldToDisplay(renderer, (currentEventPosition[0],currentEventPosition[1],focalDepth))
-        oldPickPoint = _computeWorldToDisplay(renderer, (previousEventPosition[0],previousEventPosition[1],focalDepth))
-        motionVector = [(pos[0]-pos[1]) for pos in slice(oldPickPoint, newPickPoint)]
-        
-        newFocalPoint = [(pos[0]+pos[1]) for pos in slice(motionVector, viewFocus)]
-        newPosition = [(pos[0]+pos[1]) for pos in slice(motionVector, viewPoint)]
-        camera.SetFocalPoint(newFocalPoint)
-        camera.SetPosition(newPosition)
-
-        renderer.UpdateLightsGeometryToFollowCamera()
-        self._rerender()
 
     def _rotate(self, previousEventPosition, currentEventPosition):
         renderer = self.renderer
@@ -62,17 +44,6 @@ class ThreeDPane(Pane):
         camera.OrthogonalizeViewUp()
         self._rerender()
 
-    def _dolly(self, dolly_value): #right click dolly
-        renderer=self.renderer
-        camera = renderer.GetActiveCamera()
-        if camera.GetParallelProjection():
-          camera.SetParallelScale(camera.GetParallelScale()*dolly_value)
-        else:
-          camera.Dolly(dolly_value)
-          renderer.ResetCameraClippingRange()
-          renderer.UpdateLightsGeometryToFollowCamera()
-        self._rerender()
-
     #################################################################
     ## Utility Methods
     #################################################################
@@ -82,6 +53,3 @@ class ThreeDPane(Pane):
         coord.SetCoordinateSystemToWorld()
         coord.SetValue(value)
         return coord.GetComputeDisplayValue(self.renderer) 
-
-    def _rerender(self):
-        self.renderer.GetRenderWindow().GetInteractor().Render()
