@@ -1,6 +1,9 @@
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # Add parent to path
 import itk
 import vtk
 from rx.subjects import Subject
+from Types import ItkTypes
 
 class Pane(Subject):
 
@@ -9,7 +12,7 @@ class Pane(Subject):
     self.uid = uid
     self.renderer = renderer
     self.scene = {}
-
+    
   def setViewer(self, viewer):
   	self.viewer = viewer
   	viewer.AddRenderer(self.renderer)

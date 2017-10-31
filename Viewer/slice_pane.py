@@ -22,14 +22,17 @@ class SlicePane(Pane):
     self.viewer = viewer
     self.imageViewer.SetRenderWindow(viewer.renderWindow)
     #################################################################
-    ## Viewer Events
+    ## Handle events
     #################################################################
-    viewer.events.mouseWheelForward \
-      .filter(lambda ev: ev[0] == self.uid) \
+
+    viewer.events \
+      .filter(lambda ev: ev[0] == EventType.MouseWheelUp and ev[2][0] == self.uid) \
       .subscribe(lambda ev: self.nextSlice())
-    viewer.events.mouseWheelBackward \
-      .filter(lambda ev: ev[0] == self.uid) \
+
+    viewer.events \
+      .filter(lambda ev: ev[0] == EventType.MouseWheelDown and ev[2][0] == self.uid) \
       .subscribe(lambda ev: self.previousSlice())
+
 
   def subscribeTo(self, observables):
     #################################################################
@@ -42,7 +45,7 @@ class SlicePane(Pane):
 
   def loadModel(self, model, orientation=SliceOrientation.AXIAL):
     # display label maps
-    vtkImageData = self.__makeVtkImageData(model)
+    vtkImageData = self.makeVtkImageData(model)
     self.imageViewer.SetInputData(vtkImageData)
     self.orientation=orientation
     self.sliceRange=(self.imageViewer.GetSliceMin(), self.imageViewer.GetSliceMax())

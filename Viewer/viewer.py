@@ -1,8 +1,12 @@
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # Add parent to path
 import vtk
 import rx
 from rx import Observable
+from rx.subjects import Subject
 from vtk import vtkCommand
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
+from Types import EventType
 from .pane import Pane
 
 #################################################################################################
@@ -18,24 +22,31 @@ class Viewer(QVTKRenderWindowInteractor):
     self.selectedPane = None
     self.renderWindow = self.GetRenderWindow()
     self.interactor = self.renderWindow.GetInteractor()
-    self.events = ViewerInteractorStyle(self)
+    self.events =  ViewerInteractorStyle(self)
     self.interactor.SetInteractorStyle(self.events)
-    
-    ########################
-    ## viewer level events
-    ########################
-    # self.events.doubleLeftButtonPress = self.leftButtonPress \
-    #   .buffer(self.leftButtonPress.debounce(300)) \
-    #   .map(lambda l: len(l)) \
-    #   .filter(lambda c: c == 2) \
-    #   .subscribe(lambda s: print('double clicked', s))
-    # self.events.leftButtonDrag = self.leftButtonPress \
-    #   .flat_map(lambda ev: self.mouseMove.take_until(self.leftButtonRelease)) \
-    #   .subscribe(lambda s: print('mouse drag', s))
-    self.events.mouseMove \
-      .subscribe(lambda ev: self.setHoveredPane(ev[0]))
-    self.events.leftButtonPress \
-      .subscribe(lambda ev: self.setSelectedPane(ev[0]))
+
+    # compose events
+    leftButtonPress       = self.events.filter(lambda ev: ev[0] == EventType.LeftButtonPress)
+    mouseMove             = self.events.filter(lambda ev: ev[0] == EventType.MouseMove)
+    leftButtonRelease     = self.events.filter(lambda ev: ev[0] == EventType.LeftButtonRelease)
+    leftButtonDoublePress = leftButtonPress \
+                              .buffer(leftButtonPress.debounce(300)) \
+                              .map(lambda xs: len(xs)) \
+                              .filter(lambda x: x == 2)
+    mouseDrag             = leftButtonPress \
+                              .flat_map(lambda ev: mouseMove.take_until(leftButtonRelease))
+
+    ########################################
+    ## Handle events
+    ########################################
+    mouseMove \
+      .subscribe(lambda ev: self.setHoveredPane(ev[2][0]))
+    leftButtonPress \
+      .subscribe(lambda ev: self.setSelectedPane(ev[2][0]))
+    leftButtonDoublePress \
+      .subscribe(lambda s: print('double clicked', s))
+    mouseDrag \
+      .subscribe(lambda s: print('mouse drag', s))
       
   def addPane(self, pane, viewPort):
     self.panes[pane.uid] = (pane, viewPort)
@@ -55,38 +66,24 @@ class Viewer(QVTKRenderWindowInteractor):
 ## ViewerInteractorStyle 
 #################################################################################################
 
-class ViewerInteractorStyle(vtk.vtkInteractorStyleUser):
+class ViewerInteractorStyle(vtk.vtkInteractorStyleUser, Subject):
     
   def __init__(self, viewer):
+    Subject.__init__(self)
+    vtk.vtkInteractorStyleUser.__init__(self)
     self.viewer = viewer
-    # subjects
-    leftButtonPress = rx.subjects.Subject()
-    leftButtonRelease = rx.subjects.Subject()
-    mouseWheelForward = rx.subjects.Subject()
-    mouseWheelBackward = rx.subjects.Subject()
-    mouseMove = rx.subjects.Subject()
-    # forward events
-    self.AddObserver(vtkCommand.LeftButtonPressEvent, lambda obj, event: leftButtonPress.on_next(event))
-    self.AddObserver(vtkCommand.LeftButtonReleaseEvent, lambda obj, event: leftButtonRelease.on_next(event))
-    self.AddObserver(vtkCommand.MouseWheelForwardEvent, lambda obj, event: mouseWheelForward.on_next(event))
-    self.AddObserver(vtkCommand.MouseWheelBackwardEvent, lambda obj, event: mouseWheelBackward.on_next(event))
-    self.AddObserver(vtk.vtkCommand.MouseMoveEvent, lambda obj, event: mouseMove.on_next(event))
-    # events object
-    self.leftButtonPress = leftButtonPress \
-      .map(lambda ev: self.eventPosition()) \
-      .filter(lambda ev: ev != None)
-    self.leftButtonRelease = leftButtonRelease \
-      .map(lambda ev: self.eventPosition()) \
-      .filter(lambda ev: ev != None)
-    self.mouseWheelForward = mouseWheelForward \
-      .map(lambda ev: self.eventPosition()) \
-      .filter(lambda ev: ev != None)
-    self.mouseWheelBackward = mouseWheelBackward \
-      .map(lambda ev: self.eventPosition()) \
-      .filter(lambda ev: ev != None)
-    self.mouseMove = mouseMove \
-      .map(lambda ev: self.eventPosition()) \
-      .filter(lambda ev: ev != None)
+
+    # events
+    self.AddObserver(vtkCommand.LeftButtonPressEvent,
+      lambda obj, event: self.on_next((EventType.LeftButtonPress, viewer, self.eventPosition())))
+    self.AddObserver(vtkCommand.LeftButtonReleaseEvent,\
+      lambda obj, event: self.on_next((EventType.LeftButtonRelease, viewer, self.eventPosition())))
+    self.AddObserver(vtkCommand.MouseWheelForwardEvent,\
+      lambda obj, event: self.on_next((EventType.MouseWheelUp, viewer, self.eventPosition())))
+    self.AddObserver(vtkCommand.MouseWheelBackwardEvent,\
+      lambda obj, event: self.on_next((EventType.MouseWheelDown, viewer, self.eventPosition())))
+    self.AddObserver(vtkCommand.MouseMoveEvent,\
+      lambda obj, event: self.on_next((EventType.MouseMove, viewer, self.eventPosition())))
 
   def eventPosition(self):
     (x, y) = self.GetInteractor().GetEventPosition()

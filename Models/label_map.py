@@ -31,7 +31,10 @@ class LabelMap():
     resampleImageFilter.SetReferenceImage(referenceImage)
     self.labelImageToLabelMapFilter = itk.LabelImageToLabelMapFilter[ItkTypes.IUC3, ItkTypes.LMLOUL3].New()
     self.labelImageToLabelMapFilter.SetInput(resampleImageFilter.GetOutput())
-    self.labelImageToLabelMapFilter.UpdateLargestPossibleRegion()
+    self.labelImageToLabelMapFilter.Update()
 
   def GetOutput(self):
     return self.labelImageToLabelMapFilter.GetOutput()
+
+  def Update(self):
+    self.labelImageToLabelMapFilter.Update()

@@ -6,7 +6,7 @@ from PyQt5.QtQuick import QQuickView
 import vtk
 import itk
 from Viewer import Viewer, SlicePane
-from Models import DicomSeries, LabelMap, Overlay
+from Models import DicomSeries, LabelMap, Overlay, ThresholdLabelMap
 from Types import SliceOrientation
 from EventManagers import PanesSyncEventManager
 
@@ -139,12 +139,19 @@ def test():
   NII_PATH = os.path.join(os.getcwd(), 'notebooks/220259.nii')
   DICOM_PATH = os.path.join(os.getcwd(), 'notebooks/220259')
   (series, seriesUIDs) = generateSeries(DICOM_PATH)
+
+  # dicom
   dicomSeries = DicomSeries(series[seriesUIDs[2]])
-  
-  mask = LabelMap(dicomSeries.GetOutput(), niiPath=NII_PATH)
-  overlay = Overlay(series[seriesUIDs[2]], niiPath=NII_PATH)
   slicePaneTL.loadModel(dicomSeries, SliceOrientation.AXIAL)
+
+  # mask
+  # mask = LabelMap(dicomSeries.GetOutput(), niiPath=NII_PATH)
+  mask = ThresholdLabelMap(dicomSeries.GetOutput(), itkImage=dicomSeries)
   slicePaneTR.loadModel(mask, SliceOrientation.AXIAL)
+  mask.subscribeTo(slicePaneTR)
+
+  # overlay
+  overlay = Overlay(series[seriesUIDs[2]], niiPath=NII_PATH)
   slicePaneBL.loadModel(overlay, SliceOrientation.CORONAL)
 
 test()

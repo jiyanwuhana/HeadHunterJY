@@ -13,5 +13,28 @@ class SliceOrientation(Enum):
   CORONAL   = 3
 
 class EventType(Enum):
-	SliceWillChange = 1
-	SyncSliceToPane = 2
+
+	# Mouse Move
+	MouseMove 							= 0
+
+	# Left mouse events
+	LeftButtonPress 				= 1
+	LeftButtonMove 					= 2		
+	LeftButtonRelease 			= 3
+	LeftButtonDrag 					= 4
+	LeftButtonDoublePress 	= 5
+
+	# Right mouse events
+	RightButtonPress 				= 6
+	RightButtonMove 				= 7
+	RightButtonRelease 			= 8
+	RightButtonDrag 				= 9
+	RightButtonDoublePress 	= 10
+
+	# Middle button/mouse wheel events
+	MouseWheelDown 					= 11
+	MouseWheelUp 						= 12
+
+	# Custom events
+	SliceWillChange 				= 13
+	SyncSliceToPane 				= 14
